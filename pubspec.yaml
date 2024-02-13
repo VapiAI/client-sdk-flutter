@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   daily_flutter: ^0.1.0-alpha.4-1
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

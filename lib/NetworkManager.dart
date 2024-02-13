@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
+import 'Models/VapiError.dart'; 
 
 class NetworkManager {
     Future<T> perform<T>(http.Request request, T Function(Map<String, dynamic>) fromJson) async {
@@ -12,9 +13,9 @@ class NetworkManager {
                 return fromJson(decodedJson);
             } catch (e) {
                 throw VapiError.decodingError(message: e.toString(), response: responseBody);
-            } else {
-                throw VapiError.networkError(responseBody); // Implement VapiError, implements Exception
-            }
+            } 
+        } else {
+            throw VapiError.networkError(responseBody); // Implement VapiError, implements Exception
         }
     }
 }
