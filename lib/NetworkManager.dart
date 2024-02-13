@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-import 'models/exports/Exports.dart'; 
+import 'templates/exports/Exports.dart'; 
 
 class NetworkManager {
     Future<T> perform<T>(http.Request request, T Function(Map<String, dynamic>) fromJson) async {

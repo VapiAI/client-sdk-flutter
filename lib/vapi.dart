@@ -3,7 +3,7 @@ library vapi;
 import 'dart:async';
 import 'package:daily_flutter/daily_flutter.dart';
 
-import 'models/exports/Exports.dart';
+import 'templates/exports/Exports.dart';
 /// A Calculator.
 
 class Calculator {
