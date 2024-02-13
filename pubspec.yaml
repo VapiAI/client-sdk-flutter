@@ -8,6 +8,8 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
+  daily_extensions: ^1.1.8
+  openai_dart: ^0.1.6+1
   flutter:
     sdk: flutter
 
