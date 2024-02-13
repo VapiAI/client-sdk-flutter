@@ -2,7 +2,8 @@ library vapi;
 
 import 'dart:async';
 import 'package:daily_flutter/daily_flutter.dart';
-import './NetworkManager.dart';
+
+import 'models/exports/Exports.dart';
 /// A Calculator.
 
 class Calculator {
