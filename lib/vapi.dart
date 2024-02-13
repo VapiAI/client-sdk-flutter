@@ -2,7 +2,7 @@ library vapi;
 
 import 'dart:async';
 import 'package:openai_dart/openai_dart.dart';
-import 'package:daily_extensions/daily_extensions.dart';
+import 'package:daily_flutter/daily_flutter.dart';
 /// A Calculator.
 
 class Vapi {
