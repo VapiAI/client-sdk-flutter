@@ -25,7 +25,7 @@ extension MessageTypeExention on MessageType {
     }
   }
 
-  MessageType fromValue(String value) {
+  static MessageType fromValue(String value) {
     switch (value) {
       case "hang":
         return MessageType.hang;

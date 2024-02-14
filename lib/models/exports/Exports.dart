@@ -1,2 +1,3 @@
 export '../AppMessage.dart';
-export '../VapiError.dart'; 
+export '../ConversationUpdate.dart';
+export '../VapiError.dart';
