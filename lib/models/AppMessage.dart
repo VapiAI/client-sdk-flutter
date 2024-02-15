@@ -1,46 +1,25 @@
-enum MessageType {
-    hang, 
-    functionCall, 
-    transcript,
-    speechUpdate,
-    metadata,
-    conversationUpdate, 
+import 'package:json_annotation/json_annotation.dart';
+
+part 'AppMessage.g.dart';
+
+@JsonSerializable()
+class AppMessage {
+  final MessageType type;
+
+  AppMessage({required this.type});
+
+  factory AppMessage.fromJson(Map<String, dynamic> json) => _$AppMessageFromJson(json);
+  Map<String, dynamic> toJson() => _$AppMessageToJson(this);
 }
 
-extension MessageTypeExention on MessageType {
-  String get value {
-    switch (this) {
-      case MessageType.hang:
-        return "hang";
-      case MessageType.functionCall:
-        return "function-call";
-      case MessageType.transcript:
-        return "transcription";
-      case MessageType.speechUpdate:
-        return "speech-update";
-      case MessageType.metadata:
-        return "metadata";
-      case MessageType.conversationUpdate:
-        return "conversation-update";
-    }
-  }
-
-  static MessageType fromValue(String value) {
-    switch (value) {
-      case "hang":
-        return MessageType.hang;
-      case "function-call":
-        return MessageType.functionCall;
-      case "transcript":
-        return MessageType.transcript;
-      case "speech-update":
-        return MessageType.speechUpdate;
-      case "metadata":
-        return MessageType.metadata;
-      case "conversation-update":
-        return MessageType.conversationUpdate;
-      default:
-        throw ArgumentError("Invalid message type value: $value");
-    }
-  }
+enum MessageType {
+  hang,
+  @JsonValue('function-call')
+  functionCall,
+  transcript,
+  @JsonValue('speech-update')
+  speechUpdate,
+  metadata,
+  @JsonValue('conversation-update')
+  conversationUpdate,
 }
