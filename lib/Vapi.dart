@@ -10,15 +10,34 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'models/exports/Exports.dart';
 
 class Vapi {
-
   final CallClient _callClient;
   final Configuration configuration;
 
   final StreamController _eventSubject = StreamController.broadcast(); 
 
+  _networkManager = NetworkManager(); 
+  
+  class Configuration {
+    final String host;
+    final String publicKey;
+
+    Configuration({required this.publicKey, String host = defaultHost})
+        : this.host = host;
+
+    Map<String, dynamic> toJson() => {
+      'host': host,
+      'publicKey': publicKey
+    };
+
+    factory Configuration.fromJson(Map<String, dynamic> json) => Configuration(
+      publicKey: json['publicKey'],
+      host: json['host'] ?? defaultHost,
+    );
+  }
+
   Vapi(this._callClient);
 
-  Uri? _makeURL(required String path) {
+  Uri? _makeURL(String path) {
 
     const String endpoint = "/call/web";
     if (!path.endsWith(endpoint)) {
@@ -32,7 +51,7 @@ class Vapi {
       scheme = 'http'; 
       port = 3001; 
     }
-    
+
     return Uri(
       scheme: scheme, 
       host: host,
@@ -41,7 +60,18 @@ class Vapi {
     );
   }
 
-  Future<void> startCall(String roomUrl) async throws WebCallResponse {
+  Future<http.Response> makeUrlRequest(Uri url) async {
+    var headers = {
+      'Authorization': 'Bearer $publicKey',
+      'Content-Type': 'application/json',
+    };
+
+    // Send POST
+    var response = await http.post(url, headers);
+    return response;
+  }
+
+  Future<void> startCall(String roomUrl) async /* throws WebCallResponse : implement */ {
     Uri? callUrl = makeURL(path: path) else {
       callDidFail(with: VapiError.invalidURL) // need to implement callDidFail, VapiError.invalidURL works I think
       throw VapiError.customError("Unable to create web call")
@@ -54,8 +84,7 @@ class Vapi {
 
     var request = makeUrlRequest(for: url); 
   }  
-  // int addOne(int value) => value + 1;
-
+  
   void callDidFail(Exception error) {
     print("Got error while joining/leaving call: $error.");
 
@@ -67,12 +96,18 @@ class Vapi {
     _eventSubject.close();
   }
 }
+
+class DidCompile {
+  int addOne(int value) => value + 1;
+}
 /* 
-  1. makeUrl: line 203 reference
-  2. makeUrlRequest: line 217 reference
-  3. callDidFail: line 281 reference
-  4. VapiError.customError: refer to method, VapiError, need equivalent for Swift.Error in dart
-  5. WebCallResponse, refer to method, Decodable equivalent
+  1. makeUrl: line 203 reference - Done
+  2. makeUrlRequest: line 217 reference - Done
+  3. callDidFail: line 281 reference - Done 
+  4. VapiError.customError: refer to method, VapiError, need equivalent for Swift.Error in dart - Looks good, check to make sure it's equivalent to swift
+  5. WebCallResponse, refer to method, Decodable equivalent - Looks good, check back as other methods are built
   6. networkManager: refer to method, need URLSession equivalent, JSONDecoder equivalent
   7. joinCall: line 181 reference
+
+  Check for errors, compile periodically
 */
