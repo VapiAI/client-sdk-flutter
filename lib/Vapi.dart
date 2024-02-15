@@ -10,8 +10,11 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'models/exports/Exports.dart';
 
 class Vapi {
+
   final CallClient _callClient;
-  final Configuration configuration; 
+  final Configuration configuration;
+
+  final StreamController _eventSubject = StreamController.broadcast(); 
 
   Vapi(this._callClient);
 
@@ -30,7 +33,6 @@ class Vapi {
       port = 3001; 
     }
     
-    // Construct uri 
     return Uri(
       scheme: scheme, 
       host: host,
@@ -53,6 +55,17 @@ class Vapi {
     var request = makeUrlRequest(for: url); 
   }  
   // int addOne(int value) => value + 1;
+
+  void callDidFail(Exception error) {
+    print("Got error while joining/leaving call: $error.");
+
+    _eventSubject.addError(error);
+    call = null;
+  }
+
+  void eventSubjectDispose() {
+    _eventSubject.close();
+  }
 }
 /* 
   1. makeUrl: line 203 reference
