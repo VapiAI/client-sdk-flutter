@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:json_annotation/json_annotation.dart';
 
 import 'models/exports/Exports.dart'; 
 
@@ -16,7 +17,7 @@ class NetworkManager {
                 throw VapiError.decodingError(message: e.toString(), response: responseBody);
             } 
         } else {
-            throw VapiError.networkError(responseBody); // Implement VapiError, implements Exception
+            throw VapiError.networkError(responseBody);
         }
     }
 }

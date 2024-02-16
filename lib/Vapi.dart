@@ -10,32 +10,21 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'models/exports/Exports.dart';
 
 class Vapi {
+  
   final CallClient _callClient;
   final Configuration configuration;
-
   final StreamController _eventSubject = StreamController.broadcast(); 
+  final Configuration configuration;
 
   _networkManager = NetworkManager(); 
   
-  class Configuration {
-    final String host;
-    final String publicKey;
+  Vapi(this._callClient, this.configuration);
 
-    Configuration({required this.publicKey, String host = defaultHost})
-        : this.host = host;
-
-    Map<String, dynamic> toJson() => {
-      'host': host,
-      'publicKey': publicKey
-    };
-
-    factory Configuration.fromJson(Map<String, dynamic> json) => Configuration(
-      publicKey: json['publicKey'],
-      host: json['host'] ?? defaultHost,
-    );
+  abstract class Event {
+    const Event();
   }
 
-  Vapi(this._callClient);
+  class didS
 
   Uri? _makeURL(String path) {
 
@@ -66,23 +55,35 @@ class Vapi {
       'Content-Type': 'application/json',
     };
 
-    // Send POST
+    // Send POST request:
     var response = await http.post(url, headers);
     return response;
   }
 
-  Future<void> startCall(String roomUrl) async /* throws WebCallResponse : implement */ {
-    Uri? callUrl = makeURL(path: path) else {
+  Future<void> startCall(String roomUrl) async {
+    Uri? callUrl = makeURL(path: path) else { // This currently errors out
       callDidFail(with: VapiError.invalidURL) // need to implement callDidFail, VapiError.invalidURL works I think
-      throw VapiError.customError("Unable to create web call")
+      throw VapiError.customError("Unable to create call.")
     }
     try {
       await _callClient.join(CallJoinData(url: roomUrl));
     } catch (e) {
-      print("Error starting call: $e");
+      throw VapiError.customError("Unable to start call.");
     }
 
-    var request = makeUrlRequest(for: url); 
+    var request = makeUrlRequest(for: url);
+
+    do {
+      let response = try networkManager.makeUrlRequest(for: callUrl)
+    } catch {
+
+    }
+
+    do {
+      let response: WebCallResponse = try await networkManager.perform();
+    } catch {
+      
+    }
   }  
   
   void callDidFail(Exception error) {
