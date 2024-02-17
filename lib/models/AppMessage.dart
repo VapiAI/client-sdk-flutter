@@ -1,14 +1,13 @@
 import 'package:json_annotation/json_annotation.dart';
 
-part 'AppMessage.g.dart';
-
 @JsonSerializable()
 class AppMessage {
   final MessageType type;
 
   AppMessage({required this.type});
 
-  factory AppMessage.fromJson(Map<String, dynamic> json) => _$AppMessageFromJson(json);
+  factory AppMessage.fromJson(Map<String, dynamic> json) =>
+      _$AppMessageFromJson(json);
   Map<String, dynamic> toJson() => _$AppMessageToJson(this);
 }
 

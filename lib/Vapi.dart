@@ -1,114 +1,121 @@
-library vapi;
-
-import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 import 'package:daily_flutter/daily_flutter.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-
-import 'models/exports/Exports.dart';
+import 'package:audio_session/audio_session.dart';
+// import 'package:permission_handler/permission_handler.dart';
 
 class Vapi {
-  
-  final CallClient _callClient;
-  final Configuration configuration;
-  final StreamController _eventSubject = StreamController.broadcast(); 
-  final Configuration configuration;
+  final String publicKey;
+  final String? apiBaseUrl;
 
-  _networkManager = NetworkManager(); 
-  
-  Vapi(this._callClient, this.configuration);
+  CallClient? _client;
 
-  abstract class Event {
-    const Event();
-  }
+  Vapi(this.publicKey, this.apiBaseUrl);
 
-  class didS
+  Future<void> startCall({String? assistantId, dynamic assistant}) async {
+    // var microphoneStatus = await Permission.microphone.request();
+    // print(microphoneStatus);
+    // if (microphoneStatus.isDenied) {
+    //   microphoneStatus = await Permission.microphone.request();
+    //   if (microphoneStatus.isPermanentlyDenied) {
+    //     openAppSettings();
+    //     return;
+    //   }
+    // }
+    AVAudioSession().setActive(true);
 
-  Uri? _makeURL(String path) {
-
-    const String endpoint = "/call/web";
-    if (!path.endsWith(endpoint)) {
-      path = "$path$endpoint"; // Append "/call/web" if not present
+    if (assistantId == null && assistant == null) {
+      throw ArgumentError('Either assistantId or assistant must be provided');
     }
 
-    String scheme = 'https';
-    int? port;
-
-    if (configuration.host == "localhost") {
-      scheme = 'http'; 
-      port = 3001; 
-    }
-
-    return Uri(
-      scheme: scheme, 
-      host: host,
-      port: port,
-      path: path,
-    );
-  }
-
-  Future<http.Response> makeUrlRequest(Uri url) async {
+    var url = Uri.parse('https://api.vapi.ai/call/web');
     var headers = {
       'Authorization': 'Bearer $publicKey',
       'Content-Type': 'application/json',
     };
+    var body = assistantId != null
+        ? jsonEncode({'assistantId': assistantId})
+        : jsonEncode({'assistant': assistant});
 
-    // Send POST request:
-    var response = await http.post(url, headers);
-    return response;
+    var response = await http.post(url, headers: headers, body: body);
+    print(response.statusCode);
+
+    var webCallUrl = null;
+
+    if (response.statusCode == 201) {
+      var data = jsonDecode(response.body);
+      webCallUrl = data['webCallUrl'];
+    } else {
+      throw Exception('Failed to make POST request');
+    }
+
+    if (webCallUrl == null) {
+      throw Exception('No web call URL found in response');
+    }
+    print('Web call URL: $webCallUrl');
+
+    var client = await CallClient.create();
+    _client = client;
+
+    client.events.listen((event) {
+      print('Event: $event');
+    });
+    print('Joining call...');
+    await client.join(
+        url: Uri.parse(webCallUrl),
+        clientSettings: const ClientSettingsUpdate.set(
+            inputs: InputSettingsUpdate.set(
+          microphone: MicrophoneInputSettingsUpdate.set(
+              isEnabled: BoolUpdate.set(true)),
+        )));
+
+    print('Call joined');
+    client.sendAppMessage(jsonEncode({'message': "playable"}), null);
   }
 
-  Future<void> startCall(String roomUrl) async {
-    Uri? callUrl = makeURL(path: path) else { // This currently errors out
-      callDidFail(with: VapiError.invalidURL) // need to implement callDidFail, VapiError.invalidURL works I think
-      throw VapiError.customError("Unable to create call.")
-    }
+  Future<void> sendMessage(String role, String content) async {
+    var message = {
+      'type': 'add-message',
+      'message': {
+        'role': role,
+        'content': content,
+      },
+    };
+    await _client!.sendAppMessage(jsonEncode(message), null);
+  }
+
+  void onAppMessage(dynamic e) {
+    if (e == null) return;
     try {
-      await _callClient.join(CallJoinData(url: roomUrl));
+      if (e.data == "listening") {
+        // emit("call-start");
+      } else {
+        try {
+          var parsedMessage = jsonDecode(e.data);
+          print("Parsed message: $parsedMessage");
+          // emit("message", parsedMessage);
+        } catch (parseError) {
+          print("Error parsing message data: $parseError");
+        }
+      }
     } catch (e) {
-      throw VapiError.customError("Unable to start call.");
+      print(e);
     }
-
-    var request = makeUrlRequest(for: url);
-
-    do {
-      let response = try networkManager.makeUrlRequest(for: callUrl)
-    } catch {
-
-    }
-
-    do {
-      let response: WebCallResponse = try await networkManager.perform();
-    } catch {
-      
-    }
-  }  
-  
-  void callDidFail(Exception error) {
-    print("Got error while joining/leaving call: $error.");
-
-    _eventSubject.addError(error);
-    call = null;
   }
 
-  void eventSubjectDispose() {
-    _eventSubject.close();
+  Future<void> stopCall() async {
+    await _client!.leave();
+  }
+
+  void setMuted(bool muted) {
+    _client!.updateInputs(
+        inputs: InputSettingsUpdate.set(
+      microphone:
+          MicrophoneInputSettingsUpdate.set(isEnabled: BoolUpdate.set(!muted)),
+    ));
+  }
+
+  bool isMuted() {
+    return _client!.inputs.microphone.isEnabled == false;
   }
 }
-
-class DidCompile {
-  int addOne(int value) => value + 1;
-}
-/* 
-  1. makeUrl: line 203 reference - Done
-  2. makeUrlRequest: line 217 reference - Done
-  3. callDidFail: line 281 reference - Done 
-  4. VapiError.customError: refer to method, VapiError, need equivalent for Swift.Error in dart - Looks good, check to make sure it's equivalent to swift
-  5. WebCallResponse, refer to method, Decodable equivalent - Looks good, check back as other methods are built
-  6. networkManager: refer to method, need URLSession equivalent, JSONDecoder equivalent
-  7. joinCall: line 181 reference
-
-  Check for errors, compile periodically
-*/

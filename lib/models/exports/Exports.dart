@@ -6,3 +6,4 @@ export '../SpeechUpdate.dart';
 export '../Transcript.dart';
 export '../VapiError.dart';
 export '../WebCallResponse.dart';
+export '../Configuration.dart';
