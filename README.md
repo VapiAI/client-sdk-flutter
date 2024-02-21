@@ -97,10 +97,10 @@ You can also send text messages to the assistant aside from the audio input usin
 
 ```dart
 vapi.send({
-  type: "add-message",
-  message: {
-    role: "system",
-    content: "The user has pressed the button, say peanuts",
+  "type": "add-message",
+  "message": {
+    "role": "system",
+    "content": "The user has pressed the button, say peanuts",
   },
 });
 
