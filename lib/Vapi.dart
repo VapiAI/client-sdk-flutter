@@ -57,7 +57,7 @@ class Vapi {
       var data = jsonDecode(response.body);
       webCallUrl = data['webCallUrl'];
     } else {
-      throw Exception('Failed to make POST request');
+      throw Exception('Failed to make POST request. Error: ${response.body}');
     }
 
     if (webCallUrl == null) {
@@ -84,6 +84,8 @@ class Vapi {
         },
       );
     });
+
+    client.setAudioDevice(deviceId: DeviceId.speakerPhone);
 
     await client.join(
         url: Uri.parse(webCallUrl),

@@ -42,7 +42,7 @@ post_install do |installer|
 end
 ```
 
-We recommend adding the audio background mode to your app's capabilities.
+We also recommend adding the audio background mode to your app's capabilities.
 
 ### Android
 Add the necessary permissions to your AndroidManifest.xml:
