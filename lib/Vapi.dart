@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:daily_flutter/daily_flutter.dart';
-import 'package:audio_session/audio_session.dart';
-// import 'package:permission_handler/permission_handler.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class Vapi {
   final String publicKey;
@@ -13,16 +12,15 @@ class Vapi {
   Vapi(this.publicKey, this.apiBaseUrl);
 
   Future<void> startCall({String? assistantId, dynamic assistant}) async {
-    // var microphoneStatus = await Permission.microphone.request();
-    // print(microphoneStatus);
-    // if (microphoneStatus.isDenied) {
-    //   microphoneStatus = await Permission.microphone.request();
-    //   if (microphoneStatus.isPermanentlyDenied) {
-    //     openAppSettings();
-    //     return;
-    //   }
-    // }
-    AVAudioSession().setActive(true);
+    var microphoneStatus = await Permission.microphone.request();
+    print(microphoneStatus);
+    if (microphoneStatus.isDenied) {
+      microphoneStatus = await Permission.microphone.request();
+      if (microphoneStatus.isPermanentlyDenied) {
+        openAppSettings();
+        return;
+      }
+    }
 
     if (assistantId == null && assistant == null) {
       throw ArgumentError('Either assistantId or assistant must be provided');
