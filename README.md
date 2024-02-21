@@ -121,7 +121,7 @@ vapi.setMuted(true);
 vapi.isMuted(); // true
 ```
 
-## Events
+### Events
 
 You can listen to the following events:
 
@@ -142,6 +142,10 @@ vapi.onEvent.listen((event) {
 ```
 
 These events allow you to react to changes in the state of the call or speech.
+
+## Example
+
+An example can be found in the repo [here](https://github.com/VapiAI/flutter/blob/b2266974e53d7a43fc412a032555686e9be262b2/example/lib/main.dart)
 
 ## License
 
