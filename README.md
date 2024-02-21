@@ -10,10 +10,10 @@ The Daily Client SDK for Flutter requires the following versions:
 - Android NDK ≥ 25.1.8937393
 
 ## Setup
-Add `vapi_flutter` as a dependency: 
+Add `vapi` as a dependency: 
 
 ```
-flutter pub add vapi_flutter
+flutter pub add vapi
 ```
 
 Then, follow the platform-specific setup instructions for `permission_handler`:
@@ -61,7 +61,7 @@ Add the permission flags for camera and microphone according to the permission_h
 First, import the Vapi class from the package:
 
 ```dart
-import 'package:vapi/Vapi.dart';
+import 'package:vapi/vapi.dart';
 ```
 
 Then, create a new instance of the Vapi class, passing your Public Key as a parameter to the constructor:
