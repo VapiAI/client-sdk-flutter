@@ -22,7 +22,7 @@ Follow the platform-specific setup instructions for `permission_handler``.
 According to the permission_handler instructions above, add the permission flags for camera and microphone.
 
 Also add this to your Info.plist:
-```plist
+```
 <key>NSMicrophoneUsageDescription</key>
 <string>This app requires access to the microphone for live audio calls.</string>
 ```
