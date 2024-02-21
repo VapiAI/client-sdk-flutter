@@ -16,7 +16,7 @@ Add `vapi_flutter` as a dependency:
 flutter pub add vapi_flutter
 ```
 
-Follow the platform-specific setup instructions for `permission_handler``.
+Then, follow the platform-specific setup instructions for `permission_handler`:
 
 ### iOS
 According to the permission_handler instructions above, add the permission flags for camera and microphone.
