@@ -1,19 +1,33 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:daily_flutter/daily_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+class VapiEvent {
+  final String label;
+  final dynamic value;
+
+  VapiEvent(this.label, [this.value]);
+}
+
 class Vapi {
   final String publicKey;
   final String? apiBaseUrl;
+  final _streamController = StreamController<VapiEvent>();
+
+  Stream<VapiEvent> get onEvent => _streamController.stream;
 
   CallClient? _client;
 
-  Vapi(this.publicKey, this.apiBaseUrl);
+  Vapi(this.publicKey, [this.apiBaseUrl]);
 
-  Future<void> startCall({String? assistantId, dynamic assistant}) async {
+  Future<void> start({String? assistantId, dynamic assistant}) async {
+    if (_client != null) {
+      throw Exception('Call already in progress');
+    }
+
     var microphoneStatus = await Permission.microphone.request();
-    print(microphoneStatus);
     if (microphoneStatus.isDenied) {
       microphoneStatus = await Permission.microphone.request();
       if (microphoneStatus.isPermanentlyDenied) {
@@ -36,7 +50,6 @@ class Vapi {
         : jsonEncode({'assistant': assistant});
 
     var response = await http.post(url, headers: headers, body: body);
-    print(response.statusCode);
 
     var webCallUrl = null;
 
@@ -50,15 +63,28 @@ class Vapi {
     if (webCallUrl == null) {
       throw Exception('No web call URL found in response');
     }
-    print('Web call URL: $webCallUrl');
 
     var client = await CallClient.create();
     _client = client;
 
-    client.events.listen((event) {
-      print('Event: $event');
-    });
     print('Joining call...');
+
+    client.events.listen((event) {
+      event.whenOrNull(
+        callStateUpdated: (stateData) {
+          if (stateData.state == CallState.leaving ||
+              stateData.state == CallState.left) {
+            _client?.dispose();
+            _client = null;
+            emit(VapiEvent("call-end"));
+          }
+        },
+        appMessageReceived: (messageData, id) {
+          _onAppMessage(messageData);
+        },
+      );
+    });
+
     await client.join(
         url: Uri.parse(webCallUrl),
         clientSettings: const ClientSettingsUpdate.set(
@@ -68,30 +94,24 @@ class Vapi {
         )));
 
     print('Call joined');
+
     client.sendAppMessage(jsonEncode({'message': "playable"}), null);
+
+    emit(VapiEvent("call-start"));
   }
 
-  Future<void> sendMessage(String role, String content) async {
-    var message = {
-      'type': 'add-message',
-      'message': {
-        'role': role,
-        'content': content,
-      },
-    };
+  Future<void> send(dynamic message) async {
     await _client!.sendAppMessage(jsonEncode(message), null);
   }
 
-  void onAppMessage(dynamic e) {
-    if (e == null) return;
+  void _onAppMessage(String msg) {
     try {
-      if (e.data == "listening") {
-        // emit("call-start");
+      if (msg == "listening") {
       } else {
         try {
-          var parsedMessage = jsonDecode(e.data);
-          print("Parsed message: $parsedMessage");
-          // emit("message", parsedMessage);
+          var parsedMessage = jsonDecode(msg);
+
+          emit(VapiEvent("message", parsedMessage));
         } catch (parseError) {
           print("Error parsing message data: $parseError");
         }
@@ -101,7 +121,10 @@ class Vapi {
     }
   }
 
-  Future<void> stopCall() async {
+  Future<void> stop() async {
+    if (_client == null) {
+      throw Exception('No call in progress');
+    }
     await _client!.leave();
   }
 
@@ -115,5 +138,13 @@ class Vapi {
 
   bool isMuted() {
     return _client!.inputs.microphone.isEnabled == false;
+  }
+
+  void emit(VapiEvent event) {
+    _streamController.add(event);
+  }
+
+  void dispose() {
+    _streamController.close();
   }
 }

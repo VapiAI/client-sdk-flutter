@@ -8,7 +8,16 @@ void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  String buttonText = 'Start Call';
+  bool isLoading = false;
+  Vapi? vapi;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -18,12 +27,43 @@ class MyApp extends StatelessWidget {
         ),
         body: Center(
           child: ElevatedButton(
-            onPressed: () async {
-              var vapi = Vapi(VAPI_PUBLIC_KEY, null);
-              print('starting call...');
-              await vapi.startCall(assistantId: VAPI_ASSISTANT_ID);
-            },
-            child: Text('Start Call'),
+            onPressed: isLoading
+                ? null
+                : () async {
+                    setState(() {
+                      buttonText = 'Loading...';
+                      isLoading = true;
+                    });
+
+                    var vapi = Vapi(VAPI_PUBLIC_KEY);
+
+                    vapi.onEvent.listen((event) {
+                      if (event.label == "call-start") {
+                        setState(() {
+                          buttonText = 'End Call';
+                          isLoading = false;
+                        });
+                        print('call started');
+                      }
+                      if (event.label == "call-end") {
+                        setState(() {
+                          buttonText = 'Start Call';
+                          isLoading = false;
+                        });
+                        print('call ended');
+                      }
+                      if (event.label == "message") {
+                        print(event.value);
+                      }
+                    });
+
+                    if (buttonText == 'Start Call') {
+                      await vapi.start(assistant: {"voice": "jennifer-playht"});
+                    } else if (buttonText == 'End Call') {
+                      await vapi.stop();
+                    }
+                  },
+            child: Text(buttonText),
           ),
         ),
       ),
