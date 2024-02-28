@@ -1,6 +1,6 @@
 name: vapi
 description: "The Vapi Flutter Client SDK."
-version: 0.0.2
+version: 0.0.3
 homepage:
 
 environment:
@@ -11,7 +11,7 @@ dependencies:
   openai_dart: ^0.1.6+1
   flutter:
     sdk: flutter
-  daily_flutter: ^0.1.0-alpha.4-1
+  daily_flutter: ^0.1.0-alpha.5
   http: ^1.2.0
   json_annotation: ^4.8.1
   web_socket_channel: ^2.4.0

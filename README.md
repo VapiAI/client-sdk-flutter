@@ -19,7 +19,7 @@ flutter pub add vapi
 Then, follow the platform-specific setup instructions for `permission_handler`:
 
 ### iOS
-According to the permission_handler instructions above, add the permission flags for camera and microphone.
+According to the permission_handler instructions above, add the permission flags for microphone.
 
 Also add this to your Info.plist:
 ```
@@ -49,12 +49,11 @@ Add the necessary permissions to your AndroidManifest.xml:
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.CAMERA" />
 <uses-permission android:name="android.permission.RECORD_AUDIO" />
 <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 ```
 
-Add the permission flags for camera and microphone according to the permission_handler instructions above.
+Add the permission flags for microphone according to the permission_handler instructions above.
 
 ## Usage
 

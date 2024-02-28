@@ -87,15 +87,19 @@ class Vapi {
 
     client.setAudioDevice(deviceId: DeviceId.speakerPhone);
 
-    await client.join(
-        url: Uri.parse(webCallUrl),
-        clientSettings: const ClientSettingsUpdate.set(
-            inputs: InputSettingsUpdate.set(
-          microphone: MicrophoneInputSettingsUpdate.set(
-              isEnabled: BoolUpdate.set(true)),
-        )));
-
-    print('Call joined');
+    try {
+      await client.join(
+          url: Uri.parse(webCallUrl),
+          clientSettings: const ClientSettingsUpdate.set(
+              inputs: InputSettingsUpdate.set(
+            microphone: MicrophoneInputSettingsUpdate.set(
+                isEnabled: BoolUpdate.set(true)),
+            camera:
+                CameraInputSettingsUpdate.set(isEnabled: BoolUpdate.set(false)),
+          )));
+    } catch (e) {
+      throw Exception('Failed to join call: $e');
+    }
 
     client.sendAppMessage(jsonEncode({'message': "playable"}), null);
 
