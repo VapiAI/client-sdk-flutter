@@ -37,6 +37,7 @@ post_install do |installer|
         '$(inherited)',
 
         'PERMISSION_MICROPHONE=1',
+      ]
     end
   end
 end
