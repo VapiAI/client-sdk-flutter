@@ -27,6 +27,7 @@ class Vapi {
       throw Exception('Call already in progress');
     }
 
+    print("🔄 ${DateTime.now()}: Vapi - Requesting Mic Permission...");
     var microphoneStatus = await Permission.microphone.request();
     if (microphoneStatus.isDenied) {
       microphoneStatus = await Permission.microphone.request();
@@ -36,11 +37,14 @@ class Vapi {
       }
     }
 
+    print("🆗 ${DateTime.now()}: Vapi - Mic Permission Granted");
+
     if (assistantId == null && assistant == null) {
       throw ArgumentError('Either assistantId or assistant must be provided');
     }
 
-    var url = Uri.parse('https://api.vapi.ai/call/web');
+    var baseUrl = '${apiBaseUrl ?? 'https://api.vapi.ai'}/call/web';
+    var url = Uri.parse(baseUrl);
     var headers = {
       'Authorization': 'Bearer $publicKey',
       'Content-Type': 'application/json',
@@ -49,35 +53,67 @@ class Vapi {
         ? jsonEncode({'assistantId': assistantId})
         : jsonEncode({'assistant': assistant});
 
-    var response = await http.post(url, headers: headers, body: body);
+    print("🔄 ${DateTime.now()}: Vapi - Preparing Call & Client...");
+
+    // Create the Vapi call and client creation as futures
+    var vapiCallFuture = http.post(url, headers: headers, body: body);
+    var clientCreationFuture = _createClientWithRetries();
+
+    // Wait for both futures to complete
+    var results = await Future.wait([vapiCallFuture, clientCreationFuture]);
+
+    var response = results[0] as http.Response;
+    var client = results[1] as CallClient;
+
+    _client = client;
 
     var webCallUrl = null;
 
     if (response.statusCode == 201) {
+      print("🆗 ${DateTime.now()}: Vapi - Vapi Call Ready");
+
       var data = jsonDecode(response.body);
       webCallUrl = data['webCallUrl'];
+      if (webCallUrl == null) {
+        print('🆘 ${DateTime.now()}: Vapi - Vapi Call URL not found');
+        emit(VapiEvent("call-error"));
+        return;
+      }
     } else {
-      throw Exception('Failed to make POST request. Error: ${response.body}');
+      client.dispose();
+      _client = null;
+      print(
+          '🆘 ${DateTime.now()}: Vapi - Failed to create Vapi Call. Error: ${response.body}');
+      emit(VapiEvent("call-error"));
+      return;
     }
 
-    if (webCallUrl == null) {
-      throw Exception('No web call URL found in response');
-    }
-
-    var client = await CallClient.create();
-    _client = client;
-
-    print('Joining call...');
+    print("🔄 ${DateTime.now()}: Vapi - Joining Call...");
 
     client.events.listen((event) {
       event.whenOrNull(
         callStateUpdated: (stateData) {
-          if (stateData.state == CallState.leaving ||
-              stateData.state == CallState.left) {
-            _client?.dispose();
-            _client = null;
-            emit(VapiEvent("call-end"));
+          switch (stateData.state) {
+            case CallState.leaving:
+            case CallState.left:
+              _client?.dispose();
+              _client = null;
+              print("⏹️  ${DateTime.now()}: Vapi - Call Ended.");
+
+              emit(VapiEvent("call-end"));
+              break;
+            case CallState.joined:
+              print("🆗 ${DateTime.now()}: Vapi - Joined Call");
+              print("📤 ${DateTime.now()}: Vapi - Sending Ready...");
+              client.sendAppMessage(jsonEncode({'message': "playable"}), null);
+              break;
+            default:
+              break;
           }
+        },
+        participantLeft: (participantData) {
+          if (participantData.info.isLocal) return;
+          _client?.leave();
         },
         appMessageReceived: (messageData, id) {
           _onAppMessage(messageData);
@@ -85,25 +121,74 @@ class Vapi {
       );
     });
 
-    client.setAudioDevice(deviceId: DeviceId.speakerPhone);
+    client
+        .join(
+            url: Uri.parse(webCallUrl),
+            clientSettings: const ClientSettingsUpdate.set(
+                inputs: InputSettingsUpdate.set(
+              microphone: MicrophoneInputSettingsUpdate.set(
+                  isEnabled: BoolUpdate.set(true)),
+              camera: CameraInputSettingsUpdate.set(
+                  isEnabled: BoolUpdate.set(false)),
+            )))
+        .catchError((e) {
+      throw Exception('🆘 ${DateTime.now()}: Vapi - Failed to join call: $e');
+    });
+  }
 
-    try {
-      await client.join(
-          url: Uri.parse(webCallUrl),
-          clientSettings: const ClientSettingsUpdate.set(
-              inputs: InputSettingsUpdate.set(
-            microphone: MicrophoneInputSettingsUpdate.set(
-                isEnabled: BoolUpdate.set(true)),
-            camera:
-                CameraInputSettingsUpdate.set(isEnabled: BoolUpdate.set(false)),
-          )));
-    } catch (e) {
-      throw Exception('Failed to join call: $e');
+  Future<CallClient> _createClientWithRetries() async {
+    var retries = 0;
+    const maxRetries = 5;
+
+    Future<CallClient> attemptCreation() async {
+      return CallClient.create();
     }
 
-    client.sendAppMessage(jsonEncode({'message': "playable"}), null);
+    Future<CallClient> createWithTimeout() async {
+      const timeoutDuration = Duration(milliseconds: 1000);
+      var completer = Completer<CallClient>();
+      Future.delayed(timeoutDuration).then((_) {
+        if (!completer.isCompleted) {
+          print("⏳ ${DateTime.now()}: Vapi - Client creation timed out.");
+          completer
+              .completeError(TimeoutException('Client creation timed out'));
+        }
+      });
 
-    emit(VapiEvent("call-start"));
+      attemptCreation().then((client) {
+        if (!completer.isCompleted) {
+          completer.complete(client);
+        } else {
+          client.dispose();
+        }
+      }).catchError((error) {
+        if (!completer.isCompleted) {
+          completer.completeError(error);
+        }
+      });
+
+      return completer.future;
+    }
+
+    while (retries < maxRetries) {
+      try {
+        print(
+            "🔄 ${DateTime.now()}: Vapi - Creating client (Attempt ${retries + 1})...");
+        var client = await createWithTimeout();
+        print("🆗 ${DateTime.now()}: Vapi - Client Created");
+        return client;
+      } catch (e) {
+        retries++;
+        if (retries >= maxRetries) {
+          print(
+              "🆘 ${DateTime.now()}: Vapi - Failed to create client after $maxRetries attempts.");
+          rethrow;
+        }
+      }
+    }
+
+    // This line should theoretically never be reached due to the rethrow above
+    throw Exception('Client creation failed after $maxRetries retries');
   }
 
   Future<void> send(dynamic message) async {
@@ -112,18 +197,16 @@ class Vapi {
 
   void _onAppMessage(String msg) {
     try {
-      if (msg == "listening") {
-      } else {
-        try {
-          var parsedMessage = jsonDecode(msg);
+      var parsedMessage = jsonDecode(msg);
 
-          emit(VapiEvent("message", parsedMessage));
-        } catch (parseError) {
-          print("Error parsing message data: $parseError");
-        }
+      if (parsedMessage == "listening") {
+        print("✅ ${DateTime.now()}: Vapi - Assistant Connected.");
+        emit(VapiEvent("call-start"));
       }
-    } catch (e) {
-      print(e);
+
+      emit(VapiEvent("message", parsedMessage));
+    } catch (parseError) {
+      print("Error parsing message data: $parseError");
     }
   }
 
@@ -144,6 +227,10 @@ class Vapi {
 
   bool isMuted() {
     return _client!.inputs.microphone.isEnabled == false;
+  }
+
+  void setAudioDevice({required DeviceId deviceId}) {
+    _client!.setAudioDevice(deviceId: deviceId);
   }
 
   void emit(VapiEvent event) {
