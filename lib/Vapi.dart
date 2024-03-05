@@ -104,8 +104,6 @@ class Vapi {
               break;
             case CallState.joined:
               print("🆗 ${DateTime.now()}: Vapi - Joined Call");
-              print("📤 ${DateTime.now()}: Vapi - Sending Ready...");
-              client.sendAppMessage(jsonEncode({'message': "playable"}), null);
               break;
             default:
               break;
@@ -117,6 +115,20 @@ class Vapi {
         },
         appMessageReceived: (messageData, id) {
           _onAppMessage(messageData);
+        },
+        participantUpdated: (participantData) {
+          if (participantData.info.username == "Vapi Speaker" &&
+              participantData.media?.microphone.state == MediaState.playable) {
+            print("📤 ${DateTime.now()}: Vapi - Sending Ready...");
+            client.sendAppMessage(jsonEncode({'message': "playable"}), null);
+          }
+        },
+        participantJoined: (participantData) {
+          if (participantData.info.username == "Vapi Speaker" &&
+              participantData.media?.microphone.state == MediaState.playable) {
+            print("📤 ${DateTime.now()}: Vapi - Sending Ready...");
+            client.sendAppMessage(jsonEncode({'message': "playable"}), null);
+          }
         },
       );
     });
