@@ -1,8 +1,8 @@
 PODS:
-  - daily_flutter (0.1.0-alpha.4):
-    - DailyFlutter-iOS (= 0.1.0-alpha.4)
+  - daily_flutter (0.16.0-beta.1):
+    - DailyFlutter-iOS (= 0.16.0-beta.1)
     - Flutter
-  - DailyFlutter-iOS (0.1.0-alpha.4):
+  - DailyFlutter-iOS (0.16.0-beta.1):
     - Flutter
   - Flutter (1.0.0)
   - permission_handler_apple (9.1.1):
@@ -26,8 +26,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
 
 SPEC CHECKSUMS:
-  daily_flutter: 427eb8a8506d3928e1a717be8d09238f101f1b21
-  DailyFlutter-iOS: 98fc348f1cd6cba6b0b6d1cfca2b1fecb1d5f998
+  daily_flutter: 00c3883fec3a7ed0d9e0a056da2c09a3b014ddca
+  DailyFlutter-iOS: af7376b9ed1bcab8f364eda049f6fa7cf4892f80
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   permission_handler_apple: e76247795d700c14ea09e3a2d8855d41ee80a2e6
 

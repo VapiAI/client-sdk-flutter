@@ -69,10 +69,10 @@ packages:
     dependency: transitive
     description:
       name: daily_flutter
-      sha256: b50342cc1dd0ad20efdd53cc86c7828b6b7f3f37409c7cabd4970b8b090e2eae
+      sha256: "97667796d7f529f6f27dcc8794747a56c54c41b5dd31b8701d41709204768df7"
       url: "https://pub.dev"
     source: hosted
-    version: "0.1.0-alpha.4-1"
+    version: "0.16.0-beta.1"
   fake_async:
     dependency: transitive
     description:
@@ -126,6 +126,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.1"
+  flutter_plugin_android_lifecycle:
+    dependency: transitive
+    description:
+      name: flutter_plugin_android_lifecycle
+      sha256: b068ffc46f82a55844acfa4fdbb61fad72fa2aef0905548419d97f0f95c456da
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.17"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -390,7 +398,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.0.2"
+    version: "0.0.7"
   vector_math:
     dependency: transitive
     description:
@@ -425,4 +433,4 @@ packages:
     version: "2.4.4"
 sdks:
   dart: ">=3.3.0 <4.0.0"
-  flutter: ">=3.0.0"
+  flutter: ">=3.7.0"

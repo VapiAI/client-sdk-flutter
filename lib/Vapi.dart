@@ -96,7 +96,6 @@ class Vapi {
           switch (stateData.state) {
             case CallState.leaving:
             case CallState.left:
-              _client?.dispose();
               _client = null;
               print("⏹️  ${DateTime.now()}: Vapi - Call Ended.");
 
@@ -170,8 +169,6 @@ class Vapi {
       attemptCreation().then((client) {
         if (!completer.isCompleted) {
           completer.complete(client);
-        } else {
-          client.dispose();
         }
       }).catchError((error) {
         if (!completer.isCompleted) {
