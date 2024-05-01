@@ -1,6 +1,7 @@
 # Vapi Flutter SDK
 
 ## Minimum requirements
+
 The Daily Client SDK for Flutter requires the following versions:
 
 - Flutter ≥ 3.0.0
@@ -10,7 +11,8 @@ The Daily Client SDK for Flutter requires the following versions:
 - Android NDK ≥ 25.1.8937393
 
 ## Setup
-Add `vapi` as a dependency: 
+
+Add `vapi` as a dependency:
 
 ```
 flutter pub add vapi
@@ -19,15 +21,18 @@ flutter pub add vapi
 Then, follow the platform-specific setup instructions for `permission_handler`:
 
 ### iOS
+
 According to the permission_handler instructions above, add the permission flags for microphone.
 
 Also add this to your Info.plist:
+
 ```
 <key>NSMicrophoneUsageDescription</key>
 <string>This app requires access to the microphone for live audio calls.</string>
 ```
 
 You'll also need to ensure this is set in your Podfile:
+
 ```ruby
 post_install do |installer|
   installer.pods_project.targets.each do |target|
@@ -46,6 +51,7 @@ end
 We also recommend adding the audio background mode to your app's capabilities.
 
 ### Android
+
 Add the necessary permissions to your AndroidManifest.xml:
 
 ```xml
@@ -91,9 +97,26 @@ await vapi.start(assistant: {
 await vapi.start(assistantId: "your-assistant-id");
 ```
 
-The `start` method will initiate a new call. 
+The `start` method will initiate a new call.
 
-You can also send text messages to the assistant aside from the audio input using the `send` method and passing appropriate `role` and `content`.
+You can override existing assistant parameters or set variables with the `assistant_overrides` parameter.
+Assume the first message is `Hey, {{name}} how are you?` and you want to set the value of `name` to `John`:
+
+```dart
+final assistantOverrides = {
+  'recordingEnabled': false,
+  'variableValues': {
+    'name': 'John',
+  },
+};
+
+await vapi.start(
+  assistantId: 'your-assistant-id',
+  assistantOverrides: assistantOverrides,
+);
+```
+
+You can send text messages to the assistant aside from the audio input using the `send` method and passing appropriate `role` and `content`.
 
 ```dart
 vapi.send({
