@@ -22,7 +22,11 @@ class Vapi {
 
   Vapi(this.publicKey, [this.apiBaseUrl]);
 
-  Future<void> start({String? assistantId, dynamic assistant}) async {
+  Future<void> start({
+    String? assistantId,
+    dynamic assistant,
+    dynamic assistantOverrides = const {},
+  }) async {
     if (_client != null) {
       throw Exception('Call already in progress');
     }
@@ -50,8 +54,12 @@ class Vapi {
       'Content-Type': 'application/json',
     };
     var body = assistantId != null
-        ? jsonEncode({'assistantId': assistantId})
-        : jsonEncode({'assistant': assistant});
+        ? jsonEncode({
+            'assistantId': assistantId,
+            'assistantOverrides': assistantOverrides
+          })
+        : jsonEncode(
+            {'assistant': assistant, 'assistantOverrides': assistantOverrides});
 
     print("🔄 ${DateTime.now()}: Vapi - Preparing Call & Client...");
 
