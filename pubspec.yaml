@@ -1,7 +1,7 @@
 name: vapi
 description: "The Vapi Flutter Client SDK."
-version: 0.0.8
-homepage:
+version: 0.0.9
+homepage: https://vapi.ai/
 
 environment:
   sdk: ">=3.2.6 <4.0.0"
