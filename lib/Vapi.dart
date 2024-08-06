@@ -26,6 +26,7 @@ class Vapi {
     String? assistantId,
     dynamic assistant,
     dynamic assistantOverrides = const {},
+    Duration clientCreationTimeoutDuration = const Duration(seconds: 10),
   }) async {
     if (_client != null) {
       throw Exception('Call already in progress');
@@ -65,7 +66,8 @@ class Vapi {
 
     // Create the Vapi call and client creation as futures
     var vapiCallFuture = http.post(url, headers: headers, body: body);
-    var clientCreationFuture = _createClientWithRetries();
+    var clientCreationFuture =
+        _createClientWithRetries(clientCreationTimeoutDuration);
 
     // Wait for both futures to complete
     var results = await Future.wait([vapiCallFuture, clientCreationFuture]);
@@ -155,7 +157,9 @@ class Vapi {
     });
   }
 
-  Future<CallClient> _createClientWithRetries() async {
+  Future<CallClient> _createClientWithRetries(
+    Duration clientCreationTimeoutDuration,
+  ) async {
     var retries = 0;
     const maxRetries = 5;
 
@@ -164,9 +168,8 @@ class Vapi {
     }
 
     Future<CallClient> createWithTimeout() async {
-      const timeoutDuration = Duration(milliseconds: 1000);
       var completer = Completer<CallClient>();
-      Future.delayed(timeoutDuration).then((_) {
+      Future.delayed(clientCreationTimeoutDuration).then((_) {
         if (!completer.isCompleted) {
           print("⏳ ${DateTime.now()}: Vapi - Client creation timed out.");
           completer
