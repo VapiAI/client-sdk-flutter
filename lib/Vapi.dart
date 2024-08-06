@@ -11,6 +11,13 @@ class VapiEvent {
   VapiEvent(this.label, [this.value]);
 }
 
+enum VapiAudioDevice {
+  speakerphone,
+  wired,
+  earpiece,
+  bluetooth,
+}
+
 class Vapi {
   final String publicKey;
   final String? apiBaseUrl;
@@ -249,8 +256,24 @@ class Vapi {
     return _client!.inputs.microphone.isEnabled == false;
   }
 
+  @Deprecated(
+    "Use [setVapiAudioDevice] instead. Deprecated because unusable if user does not depend of daily_flutter",
+  )
+
+  /// use [setVapiAudioDevice] instead
   void setAudioDevice({required DeviceId deviceId}) {
     _client!.setAudioDevice(deviceId: deviceId);
+  }
+
+  void setVapiAudioDevice({required VapiAudioDevice device}) {
+    _client!.setAudioDevice(
+      deviceId: switch (device) {
+        VapiAudioDevice.speakerphone => DeviceId.speakerPhone,
+        VapiAudioDevice.wired => DeviceId.wired,
+        VapiAudioDevice.earpiece => DeviceId.earpiece,
+        VapiAudioDevice.bluetooth => DeviceId.bluetooth,
+      },
+    );
   }
 
   void emit(VapiEvent event) {
