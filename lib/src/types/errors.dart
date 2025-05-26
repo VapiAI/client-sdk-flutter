@@ -73,12 +73,12 @@ class VapiMaxRetriesExceededException extends VapiException {
   const VapiMaxRetriesExceededException() : super('Client creation failed after maximum retries');
 }
 
-/// Thrown when attempting to perform an operation that requires an active call.
+/// Thrown when attempting to perform an operation on a call that has ended.
 /// 
-/// This exception is thrown when calling methods like [Vapi.send], [Vapi.stop],
-/// [Vapi.setMuted], [Vapi.isMuted], or [Vapi.setVapiAudioDevice] without
-/// an active call session.
-class VapiNoCallException extends VapiException {
-  /// Creates a new VapiNoCallException.
-  const VapiNoCallException() : super('No call in progress');
+/// This exception is thrown when calling methods like [VapiCall.send], [VapiCall.stop],
+/// [VapiCall.setMuted], [VapiCall.isMuted], or [VapiCall.setVapiAudioDevice] on
+/// a call that is no longer active.
+class VapiCallEndedException extends VapiException {
+  /// Creates a new VapiCallEndedException.
+  const VapiCallEndedException() : super('Call has ended');
 } 

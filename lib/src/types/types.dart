@@ -10,4 +10,5 @@ export 'errors.dart';
 export 'vapi_event.dart';
 
 // Export enums and other types
-export 'vapi_audio_device.dart'; 
+export 'vapi_audio_device.dart';
+export 'vapi_call_status.dart'; 
