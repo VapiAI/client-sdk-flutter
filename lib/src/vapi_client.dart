@@ -59,6 +59,12 @@ class VapiClient {
   /// 
   /// Returns a [VapiCall] instance that can be used to interact with the call.
   /// 
+  /// Note: When this function returns, the call has been initialized successfully,
+  /// but the [VapiCall.status] will remain in [VapiCallStatus.starting] until the
+  /// assistant sends a "listening" event. This event may be delayed if the assistant
+  /// has an initial monologue to deliver. The status will only switch to
+  /// [VapiCallStatus.active] after receiving the "listening" event.
+  /// 
   /// Throws:
   /// - [VapiMissingAssistantException] if neither assistantId nor assistant is provided
   /// - [VapiJoinFailedException] if joining the call fails
@@ -132,18 +138,16 @@ class VapiClient {
     }
 
     final response = await http.post(url, headers: headers, body: body);
-
-    if (response.statusCode == 201) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      
-      if (data['webCallUrl'] == null) {
-        throw const VapiJoinFailedException('Call URL not found in response');
-      }
-
-      return data;
-    } else {
+    if (response.statusCode != 201) {
       throw VapiJoinFailedException('Failed to create call: ${response.body}');
     }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    if (data['webCallUrl'] == null) {
+      throw const VapiJoinFailedException('Call URL not found in response');
+    }
+
+    return data;
   }
 
   /// Creates a call client with retry logic.
