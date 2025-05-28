@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vapi/vapi.dart';
 
-const vapiPublicKey = 'VAPI_PUBLIC_KEY';
-const vapiAssistantId = 'VAPI_ASSISTANT_ID';
-
 void main() {
   runApp(const MyApp());
 }
@@ -20,13 +17,16 @@ class _MyAppState extends State<MyApp> {
   bool isLoading = false;
   bool isCallStarted = false;
   
-  late final VapiClient vapiClient;
+  VapiClient? vapiClient;
   VapiCall? currentCall;
+  
+  // Controllers for text fields
+  final TextEditingController _publicKeyController = TextEditingController();
+  final TextEditingController _assistantIdController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    vapiClient = VapiClient(vapiPublicKey);
   }
 
   void _handleCallEvents(VapiEvent event) {
@@ -52,6 +52,37 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Future<void> _onButtonPressed() async {
+    setState(() {
+      buttonText = 'Loading...';
+      isLoading = true;
+    });
+
+    try {
+      // Initialize client if not already done
+      if (vapiClient == null) {
+        vapiClient = VapiClient(_publicKeyController.text.trim());
+      }
+
+      if (!isCallStarted) {
+        // Start a new call using assistant ID
+        final call = await vapiClient!.start(assistantId: _assistantIdController.text.trim());
+        
+        currentCall = call;
+        call.onEvent.listen(_handleCallEvents);
+      } else {
+        // End the current call
+        await currentCall?.stop();
+      }
+    } catch (e) {
+      debugPrint('Error: $e');
+      setState(() {
+        buttonText = 'Start Call';
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -59,49 +90,34 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Vapi Test App'),
         ),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: isLoading
-                ? null
-                : () async {
-                    setState(() {
-                      buttonText = 'Loading...';
-                      isLoading = true;
-                    });
-
-                    try {
-                      if (!isCallStarted) {
-                        // Start a new call
-                        final call = await vapiClient.start(assistant: {
-                          "firstMessage": "Hello, I am an assistant.",
-                          "model": {
-                            "provider": "openai",
-                            "model": "gpt-3.5-turbo",
-                            "messages": [
-                              {
-                                "role": "system",
-                                "content": "You are an assistant."
-                              }
-                            ]
-                          },
-                          "voice": "jennifer-playht"
-                        });
-                        
-                        currentCall = call;
-                        call.onEvent.listen(_handleCallEvents);
-                      } else {
-                        // End the current call
-                        await currentCall?.stop();
-                      }
-                    } catch (e) {
-                      debugPrint('Error: $e');
-                      setState(() {
-                        buttonText = 'Start Call';
-                        isLoading = false;
-                      });
-                    }
-                  },
-            child: Text(buttonText),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextField(
+                controller: _publicKeyController,
+                decoration: const InputDecoration(
+                  labelText: 'VAPI Public Key',
+                  border: OutlineInputBorder(),
+                  hintText: 'Enter your VAPI public key',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _assistantIdController,
+                decoration: const InputDecoration(
+                  labelText: 'VAPI Assistant ID',
+                  border: OutlineInputBorder(),
+                  hintText: 'Enter your VAPI assistant ID',
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: _onButtonPressed,
+                child: Text(buttonText),
+              ),
+            ],
           ),
         ),
       ),
@@ -110,6 +126,8 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    _publicKeyController.dispose();
+    _assistantIdController.dispose();
     currentCall?.dispose();
     super.dispose();
   }
