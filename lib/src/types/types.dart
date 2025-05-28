@@ -2,6 +2,7 @@
 /// 
 /// This library exports all the type definitions used by the Vapi Flutter SDK,
 /// including events, exceptions, and enums.
+library;
 
 // Export all exception classes
 export 'errors.dart';

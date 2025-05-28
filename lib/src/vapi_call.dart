@@ -275,7 +275,7 @@ class VapiCall {
 
   /// Joins the call using the provided web call URL.
   Future<void> _joinCall(String webCallUrl) async {
-    final clientSettings = const ClientSettingsUpdate.set(
+    const clientSettings = ClientSettingsUpdate.set(
       inputs: InputSettingsUpdate.set(
         microphone: MicrophoneInputSettingsUpdate.set(
           isEnabled: BoolUpdate.set(true)

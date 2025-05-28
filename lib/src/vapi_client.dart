@@ -121,7 +121,7 @@ class VapiClient {
     dynamic assistant,
     Map<String, dynamic> assistantOverrides = const {},
   }) async {
-    final baseUrl = '${apiBaseUrl}/call/web';
+    final baseUrl = '$apiBaseUrl/call/web';
     final url = Uri.parse(baseUrl);
     final headers = {
       'Authorization': 'Bearer $publicKey',

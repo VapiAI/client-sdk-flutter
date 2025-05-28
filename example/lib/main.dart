@@ -6,7 +6,7 @@ void main() {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -60,9 +60,7 @@ class _MyAppState extends State<MyApp> {
 
     try {
       // Initialize client if not already done
-      if (vapiClient == null) {
-        vapiClient = VapiClient(_publicKeyController.text.trim());
-      }
+      vapiClient ??= VapiClient(_publicKeyController.text.trim());
 
       if (!isCallStarted) {
         // Start a new call using assistant ID
