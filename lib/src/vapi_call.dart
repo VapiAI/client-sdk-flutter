@@ -122,9 +122,6 @@ class VapiCall {
   /// Returns the current status of this call.
   VapiCallStatus get status => _status;
 
-  /// Returns true if this call is currently active and ready for interaction.
-  bool get active => _status == VapiCallStatus.active;
-
   // Call metadata from Vapi API response
   /// Unique identifier for this call.
   final String id;
