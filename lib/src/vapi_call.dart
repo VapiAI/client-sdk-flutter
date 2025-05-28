@@ -69,7 +69,15 @@ class VapiCallTransport {
 /// Example usage:
 /// ```dart
 /// final vapiClient = VapiClient('your-public-key');
+/// 
+/// // Start a call and return immediately
 /// final call = await vapiClient.start(assistantId: 'assistant-id');
+/// 
+/// // Or start a call and wait until the assistant is actively listening
+/// final activeCall = await vapiClient.start(
+///   assistantId: 'assistant-id',
+///   waitUntilActive: true,
+/// );
 /// 
 /// // Access call information
 /// print('Call ID: ${call.id}');
@@ -98,6 +106,9 @@ class VapiCall {
 
   /// Stream controller for broadcasting Vapi events for this call.
   final _streamController = StreamController<VapiEvent>.broadcast();
+
+  /// Completer for waiting until the call becomes active.
+  final Completer<void> _activeCallCompleter = Completer<void>();
 
   /// Stream of Vapi events that occur during this call's lifecycle.
   /// 
@@ -179,7 +190,12 @@ class VapiCall {
   /// Factory method to create a VapiCall with an initialized client and API response data.
   /// 
   /// This method parses the API response, sets up the call client and joins the call.
-  static Future<VapiCall> create(CallClient client, Map<String, dynamic> apiResponse) async {
+  /// If [waitUntilActive] is true, it will wait until the assistant starts listening.
+  static Future<VapiCall> create(
+    CallClient client, 
+    Map<String, dynamic> apiResponse, {
+    bool waitUntilActive = false,
+  }) async {
     // Parse the API response
     final id = apiResponse['id'] as String;
     final orgId = apiResponse['orgId'] as String;
@@ -209,6 +225,11 @@ class VapiCall {
     );
     
     await call._joinCall(webCallUrl);
+    
+    // Wait for the call to become active if requested
+    if (waitUntilActive) {
+      await call._activeCallCompleter.future;
+    }
     
     return call;
   }
@@ -297,6 +318,11 @@ class VapiCall {
 
       if (parsedMessage == "listening") {
         _status = VapiCallStatus.active;
+        
+        if (!_activeCallCompleter.isCompleted) {
+          _activeCallCompleter.complete();
+        }
+        
         emit(const VapiEvent("call-start"));
       }
 

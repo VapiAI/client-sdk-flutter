@@ -15,8 +15,14 @@ import 'vapi_call.dart';
 /// ```dart
 /// final vapiClient = VapiClient('your-public-key');
 /// 
-/// // Start a call with an assistant
+/// // Start a call with an assistant (returns once call is established - agent might need longer to start listening)
 /// final call = await vapiClient.start(assistantId: 'assistant-id');
+/// 
+/// // Or start a call and wait until the assistant is actively listening
+/// final activeCall = await vapiClient.start(
+///   assistantId: 'assistant-id',
+///   waitUntilActive: true,
+/// );
 /// 
 /// // Listen to events on the call
 /// call.onEvent.listen((event) {
@@ -56,6 +62,9 @@ class VapiClient {
   /// 
   /// [assistantOverrides] allows you to override assistant settings for this call.
   /// [clientCreationTimeoutDuration] sets the timeout for creating the call client.
+  /// [waitUntilActive] determines whether to wait until the call is active before returning.
+  /// When true, the method will wait for the assistant to start listening before returning.
+  /// This will skip the [VapiCallStatus.starting] state (when observed externally).
   /// 
   /// Returns a [VapiCall] instance that can be used to interact with the call.
   /// 
@@ -70,6 +79,7 @@ class VapiClient {
     dynamic assistant,
     Map<String, dynamic> assistantOverrides = const {},
     Duration clientCreationTimeoutDuration = const Duration(seconds: 10),
+    bool waitUntilActive = false,
   }) async {
     await _requestMicrophonePermission();
 
@@ -86,7 +96,7 @@ class VapiClient {
     final client = await _createClientWithRetries(clientCreationTimeoutDuration);
 
     try {
-      return await VapiCall.create(client, apiResponse);
+      return await VapiCall.create(client, apiResponse, waitUntilActive: waitUntilActive);
     } catch (e) {
       client.dispose();
       rethrow;
