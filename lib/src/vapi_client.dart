@@ -59,12 +59,6 @@ class VapiClient {
   /// 
   /// Returns a [VapiCall] instance that can be used to interact with the call.
   /// 
-  /// Note: When this function returns, the call has been initialized successfully,
-  /// but the [VapiCall.status] will remain in [VapiCallStatus.starting] until the
-  /// assistant sends a "listening" event. This event may be delayed if the assistant
-  /// has an initial monologue to deliver. The status will only switch to
-  /// [VapiCallStatus.active] after receiving the "listening" event.
-  /// 
   /// Throws:
   /// - [VapiMissingAssistantException] if neither assistantId nor assistant is provided
   /// - [VapiJoinFailedException] if joining the call fails
