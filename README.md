@@ -1,215 +1,236 @@
 # Vapi Flutter SDK
 
-## Minimum requirements
+## Overview
 
-The Daily Client SDK for Flutter requires the following versions:
+The Vapi Flutter SDK provides seamless integration with the Vapi voice AI platform across multiple platforms. This SDK uses a modern factory pattern architecture that automatically selects the appropriate implementation based on your target platform.
 
-- Flutter ≥ 3.0.0
-- iOS ≥ 13.0 (objective-C and Swift applications are supported)
-- Android compileSdkVersion ≥ 33
-- Android minSdkVersion ≥ 24
-- Android NDK ≥ 25.1.8937393
+### Supported Platforms
 
-## Setup
+- ✅ **Mobile** (iOS/Android) - Using Daily.co WebRTC
+- ✅ **Web** - Using Vapi Web SDK with JavaScript interop
+  - Modern `dart:js_interop` implementation (future-proof & Wasm compatible)
+  - Extension types with full compile-time checking
+  - No deprecated APIs - ready for long-term use
+- 🔮 **Desktop** - Planned for future releases
 
-Add `vapi` as a dependency:
+## Architecture
 
-```
-flutter pub add vapi
-```
-
-Then, follow the platform-specific setup instructions for `permission_handler`:
-
-### iOS
-
-According to the permission_handler instructions above, add the permission flags for microphone.
-
-Also add this to your Info.plist:
+The SDK uses a clean factory pattern with platform-specific implementations:
 
 ```
-<key>NSMicrophoneUsageDescription</key>
-<string>This app requires access to the microphone for live audio calls.</string>
+VapiClient (Factory)
+├── VapiMobileClient (iOS/Android)
+│   └── VapiMobileCall
+└── VapiWebClient (Web)
+    └── VapiWebCall
 ```
 
-You'll also need to ensure this is set in your Podfile:
+### Key Benefits
 
-```ruby
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    flutter_additional_ios_build_settings(target)
-    target.build_configurations.each do |config|
-      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
-        '$(inherited)',
+- **Automatic Platform Detection**: No need to worry about platform-specific code
+- **Unified API**: Same code works across all platforms
+- **Platform Optimizations**: Each platform uses the most efficient implementation
+- **Type Safety**: Full compile-time checking with platform-specific features
+- **Easy Extension**: Simple to add new platforms in the future
 
-        'PERMISSION_MICROPHONE=1',
-      ]
-    end
-  end
-end
+## Installation
+
+Add this to your package's `pubspec.yaml` file:
+
+```yaml
+dependencies:
+  vapi: ^0.1.0
 ```
 
-We also recommend adding the audio background mode to your app's capabilities.
-
-### Android
-
-Add the necessary permissions to your AndroidManifest.xml:
-
-```xml
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.RECORD_AUDIO" />
-<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-```
-
-Add the permission flags for microphone according to the permission_handler instructions above.
-
-## Usage
-
-First, import the Vapi class from the package:
+## Quick Start
 
 ```dart
 import 'package:vapi/vapi.dart';
-```
 
-Then, create a new instance of the Vapi class, passing your Public Key as a parameter to the constructor:
+// Create a client - automatically selects platform implementation
+final client = VapiClient('your-public-key');
 
-```dart
-var vapi = Vapi('your-public-key');
-```
+// Start a call
+final call = await client.start(assistantId: 'your-assistant-id');
 
-You can start a new call by calling the `start` method and passing an `assistant` object or `assistantId`:
-
-```dart
-await vapi.start(assistant: {
-  "model": {
-    "provider": "openai",
-    "model": "gpt-3.5-turbo",
-    "systemPrompt": "You're an assistant..."
-  },
-   "voice": {
-    "provider": "11labs",
-    "voiceId": "burt",
-  },
-  ...
+// Listen to events
+call.onEvent.listen((event) {
+  switch (event.label) {
+    case 'call-start':
+      print('Assistant is ready and listening');
+    case 'call-end':
+      print('Call has ended');
+    case 'message':
+      print('Message: ${event.value}');
+  }
 });
+
+// Send a message
+await call.send({
+  'type': 'add-message',
+  'message': {
+    'role': 'system',
+    'content': 'Hello from Flutter!'
+  }
+});
+
+// Clean up
+await call.stop();
+call.dispose();
+client.dispose();
 ```
 
+## Platform-Specific Features
+
+### Mobile-Only Features
+
 ```dart
-await vapi.start(assistantId: "your-assistant-id");
+// Access mobile-specific features through type checking
+if (call is VapiMobileCall) {
+  // Audio device management
+  call.setAudioDevice(device: VapiAudioDevice.speakerphone);
+  
+  // Access transport information
+  print('Transport: ${call.transport.provider}');
+  print('Monitor URL: ${call.monitor.listenUrl}');
+}
 ```
 
-The `start` method will initiate a new call.
-
-You can override existing assistant parameters or set variables with the `assistant_overrides` parameter.
-Assume the first message is `Hey, {{name}} how are you?` and you want to set the value of `name` to `John`:
+### Web Features
 
 ```dart
-final assistantOverrides = {
-  'recordingEnabled': false,
-  'variableValues': {
-    'name': 'John',
-  },
-};
+// Access web-specific features through type checking
+if (call is VapiWebCall) {
+  // Make the assistant say something (web-specific feature)
+  call.say('Hello! I have something to tell you.');
+  
+  // End call after speaking
+  call.say('Goodbye!', endCallAfterSpoken: true);
+  
+  // Note: Audio device management is handled by browser
+  // setAudioDevice() is a no-op on web platforms
+}
+```
 
-await vapi.start(
-  assistantId: 'your-assistant-id',
-  assistantOverrides: assistantOverrides,
+## Migration from v0.0.x
+
+The new factory pattern maintains API compatibility while providing better architecture:
+
+### Before (v0.0.x)
+```dart
+final vapi = VapiClient('key');
+final call = await vapi.start(assistantId: 'id');
+```
+
+### After (v0.1.x)
+```dart
+final client = VapiClient('key');  // Same constructor
+final call = await client.start(assistantId: 'id');  // Same method
+// But now with automatic platform selection!
+```
+
+### Breaking Changes
+
+- Return type changed from `VapiCall` to `VapiCallInterface` 
+- Platform-specific features now accessed through type checking
+- Added `client.dispose()` for proper resource cleanup
+
+## API Reference
+
+### VapiClient
+
+The main factory class that creates platform-appropriate implementations.
+
+```dart
+// Create a client
+final client = VapiClient(
+  'your-public-key',
+  apiBaseUrl: 'https://api.vapi.ai', // Optional
 );
+
+// Start a call
+final call = await client.start(
+  assistantId: 'assistant-id',              // Option 1: Use existing assistant
+  assistant: {...},                         // Option 2: Inline configuration
+  assistantOverrides: {...},                // Optional: Override settings
+  waitUntilActive: false,                   // Optional: Wait for assistant
+);
+
+// Clean up
+client.dispose();
 ```
 
-You can send text messages to the assistant aside from the audio input using the `send` method and passing appropriate `role` and `content`.
+### VapiCallInterface
+
+The unified interface for managing calls across platforms.
 
 ```dart
-vapi.send({
-  "type": "add-message",
-  "message": {
-    "role": "system",
-    "content": "The user has pressed the button, say peanuts",
-  },
+// Call information
+print(call.id);
+print(call.assistantId);
+print(call.status);
+print(call.createdAt);
+
+// Event listening
+call.onEvent.listen((event) {
+  // Handle events
 });
 
+// Audio controls
+call.setMuted(true);
+final isMuted = call.isMuted;
+
+// Send messages
+await call.send({'type': 'add-message', ...});
+
+// End call
+await call.stop();
+call.dispose();
 ```
 
-Possible values for the role are `system`, `user`, `assistant`, `tool` or `function`.
-
-You can stop the session by calling the `stop` method:
+## Error Handling
 
 ```dart
-await vapi.stop();
+try {
+  final client = VapiClient('your-key');
+  final call = await client.start(assistantId: 'assistant-id');
+} on VapiConfigurationException catch (e) {
+  print('Configuration error: $e');
+} on VapiMissingAssistantException catch (e) {
+  print('Assistant error: $e');
+} on VapiJoinFailedException catch (e) {
+  print('Connection error: $e');
+} catch (e) {
+  print('Unexpected error: $e');
+}
 ```
 
-This will stop the recording and close the connection.
+## Examples
 
-The `setMuted(muted: boolean)` can be used to mute and un-mute the user's microphone.
+Check out the `/example` folder for complete implementations:
 
-```dart
-vapi.isMuted(); // false
-vapi.setMuted(true);
-vapi.isMuted(); // true
-```
+- **Basic Usage**: Simple call start/stop functionality
+- **Event Handling**: Comprehensive event listening examples
+- **Platform Features**: Demonstrating platform-specific capabilities
 
-### Events
+## Contributing
 
-You can listen to the following events:
+We welcome contributions! The factory pattern architecture makes it easy to:
 
-```dart
-vapi.onEvent.listen((event) {
-    if (event.label == "call-start") {
-        print('call started');
-    }
-    if (event.label == "call-end") {
-        print('call ended');
-    }
+1. **Add New Platforms**: Implement the interfaces for new platforms
+2. **Improve Existing Platforms**: Enhance mobile or web implementations
+3. **Add Features**: Extend the interface with new capabilities
 
-    // Speech statuses, function calls and transcripts will be sent via messages
-    if (event.label == "message") {
-        print(event.value);
-    }
-});
-```
+## Roadmap
 
-These events allow you to react to changes in the state of the call or speech.
-
-## Troubleshooting
-
-### Choppy or Interrupted Calls
-
-If calls feel choppy or abrupt (abgehackt), this is often caused by the agent hearing itself and being interrupted. This typically happens when the agent's voice output is picked up by the microphone, creating a feedback loop where the agent stops speaking because it thinks the user is interrupting.
-
-This issue is more common in development environments or when using simulators/emulators with intermediate audio layers. On real devices, the operating system automatically filters out audio that is being played through the speakers from the microphone input stream (echo cancellation), preventing this self-interruption problem.
-
-**Solutions:**
-
-- Test on physical devices rather than simulators when possible
-- Use headphones during development to prevent speaker audio from being picked up by the microphone
-- Ensure proper audio session configuration on your target platform
-- Check that echo cancellation is properly enabled in your device's audio settings
-
-## Example
-
-An example can be found in the repo [here](example/lib/main.dart)
+- [x] Mobile support (iOS/Android) with Daily.co WebRTC
+- [x] Factory pattern architecture
+- [x] Unified API across platforms
+- [x] Web support with Vapi Web SDK
+- [ ] Desktop support (Windows/macOS/Linux)
+- [ ] Advanced audio features
+- [ ] Multiple simultaneous calls
 
 ## License
 
-```
-MIT License
-
-Copyright (c) 2023 Vapi Labs Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+MIT License - see the [LICENSE](LICENSE) file for details.

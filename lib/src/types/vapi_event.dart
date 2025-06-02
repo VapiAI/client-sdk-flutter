@@ -42,4 +42,12 @@ class VapiEvent {
 
   /// Creates a new VapiEvent with the specified [label] and optional [value].
   const VapiEvent(this.label, [this.value]);
+
+  /// Creates a VapiEvent from a message received during a call.
+  /// 
+  /// This factory method is used to create message events from incoming
+  /// data during a call session.
+  factory VapiEvent.fromMessage(Map<String, dynamic> message) {
+    return VapiEvent('message', message);
+  }
 } 

@@ -19,6 +19,15 @@ class VapiException implements Exception {
   String toString() => 'VapiException: $message${details != null ? '\nDetails: $details' : ''}';
 }
 
+/// Thrown when the client is configured with invalid parameters.
+/// 
+/// This includes cases like empty public keys, invalid URLs, or
+/// other configuration errors that prevent proper operation.
+class VapiConfigurationException extends VapiException {
+  /// Creates a new VapiConfigurationException with the given [message].
+  const VapiConfigurationException(String message) : super(message);
+}
+
 /// Thrown when attempting to start a call while another call is already in progress.
 /// 
 /// Only one call can be active at a time. Stop the current call before starting a new one.

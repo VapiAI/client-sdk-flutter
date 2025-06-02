@@ -1,7 +1,7 @@
 /// Vapi Flutter SDK Type Definitions
 /// 
 /// This library exports all the type definitions used by the Vapi Flutter SDK,
-/// including events, exceptions, and enums.
+/// including events, exceptions, enums, and interfaces.
 library;
 
 // Export all exception classes

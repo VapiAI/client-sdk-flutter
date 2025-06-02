@@ -1,24 +1,28 @@
 name: vapi
-description: "The Vapi Flutter Client SDK."
-version: 0.0.9
+description: "The Vapi Flutter Client SDK with unified mobile and web support."
+version: 0.1.0
 homepage: https://vapi.ai/
 
 environment:
-  sdk: ">=3.2.6 <4.0.0"
-  flutter: ">=1.17.0"
+  sdk: ">=3.6.0 <4.0.0"
+  flutter: ">=3.16.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  daily_flutter: ^0.31.0
   http: ^1.2.0
+  
+  # Mobile-specific dependencies (conditionally included)
+  daily_flutter: ^0.31.0
   permission_handler: ^11.3.1
+  
+  # Web-specific dependencies
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
