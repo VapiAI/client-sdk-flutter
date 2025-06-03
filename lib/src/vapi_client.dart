@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'vapi_client_interface.dart';
 import 'vapi_call_interface.dart';
-import 'types/errors.dart';
+import 'shared/exceptions.dart';
 
 // Import implementations directly - tree shaking will handle unused code
 
@@ -54,10 +54,12 @@ class VapiClient implements VapiClientInterface {
       throw const VapiConfigurationException('Public key cannot be empty');
     }
 
-    return VapiClient._(getImplementation(
-      publicKey: publicKey, 
-      apiBaseUrl: apiBaseUrl,
-    ));
+    return VapiClient._(
+      getImplementation(
+        publicKey: publicKey, 
+        apiBaseUrl: apiBaseUrl,
+      ),
+    );
   }
 
   /// The public API key used for authentication

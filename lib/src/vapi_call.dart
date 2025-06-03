@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:daily_flutter/daily_flutter.dart';
-import 'types/errors.dart';
-import 'types/vapi_event.dart';
-import 'types/vapi_audio_device.dart';
-import 'types/vapi_call_status.dart';
+import 'shared/exceptions.dart';
+import 'shared/vapi_event.dart';
+import 'shared/vapi_audio_device.dart';
+import 'shared/vapi_call_status.dart';
 
 /// Represents the monitor configuration for a Vapi call.
 /// 
@@ -292,7 +292,7 @@ class VapiCall {
           clientSettings: clientSettings,
         )
         .catchError((e) {
-      throw VapiJoinFailedException(e);
+      throw VapiStartCallException(e);
     });
   }
 

@@ -105,5 +105,5 @@ export 'src/vapi_client.dart';
 export 'src/vapi_client_interface.dart';
 export 'src/vapi_call_interface.dart';
 
-// Export all types
-export 'src/types/types.dart'; 
+// Export shared classes
+export 'src/shared/shared.dart';

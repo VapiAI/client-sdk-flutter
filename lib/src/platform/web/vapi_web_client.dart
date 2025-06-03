@@ -6,7 +6,9 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 import '../../vapi_client_interface.dart';
 import '../../vapi_call_interface.dart';
-import '../../types/errors.dart';
+import '../../shared/exceptions.dart';
+import '../../shared/errors.dart';
+import '../../shared/assistant_config.dart';
 import 'vapi_web_call.dart';
 import 'vapi_js_interop.dart';
 
@@ -51,7 +53,8 @@ class VapiWebClient implements VapiClientInterface {
         globalContext.setProperty(moduleName, esModule);
         _scriptLoadedCompleter.complete();
       }).catchError((e) {
-        _scriptLoadedCompleter.completeError(e);
+        final error = VapiClientCreationError('Failed to load Vapi Web SDK: $e');
+        _scriptLoadedCompleter.completeError(error);
       });
 
       _scriptInjected = true;
@@ -63,16 +66,16 @@ class VapiWebClient implements VapiClientInterface {
   /// [publicKey] is required for API authentication.
   /// [apiBaseUrl] is not used in web implementation as the Vapi Web SDK
   /// handles API communication internally.
-  VapiWebClient(
-    this.publicKey, {
-    this.apiBaseUrl = 'https://api.vapi.ai',
+  VapiWebClient({
+    required this.publicKey,
+    this.apiBaseUrl = defaultApiBaseUrl,
   }) {
     if (publicKey.isEmpty) {
       throw const VapiConfigurationException('Public key cannot be empty');
     }
 
     if (!_scriptInjected || !_scriptLoadedCompleter.isCompleted) {
-      throw VapiConfigurationException('Vapi Web SDK script not loaded - injection status: $_scriptInjected, completion status: ${_scriptLoadedCompleter.isCompleted}');
+      throw VapiClientCreationError('Vapi Web SDK script not loaded - injection status: $_scriptInjected, completion status: ${_scriptLoadedCompleter.isCompleted}');
     }
 
     try {
@@ -90,56 +93,33 @@ class VapiWebClient implements VapiClientInterface {
     Duration clientCreationTimeoutDuration = const Duration(seconds: 10),
     bool waitUntilActive = false,
   }) async {
-    // Validate input parameters
-    if (assistantId == null && assistant == null) {
-      throw const VapiMissingAssistantException();
-    }
+    final assistantConfig = AssistantConfig(
+      assistantId: assistantId, 
+      assistant: assistant, 
+      assistantOverrides: assistantOverrides
+    );
 
     try {
-      // Prepare assistant configuration for JavaScript
-      final JSAny assistantConfig;
-      if (assistantId != null) {
-        assistantConfig = assistantId.toJS;
-      } else {
-        assistantConfig = assistant!.jsify() as JSAny;
-      }
-
-      // Prepare assistant overrides if provided
-      final JSObject? jsOverrides = assistantOverrides.isNotEmpty 
-          ? assistantOverrides.jsify() as JSObject
-          : null;
-
-      // Start the call using the Web SDK with modern Promise handling
-      final jsPromise = _vapiJs.start(assistantConfig, jsOverrides);
-      final jsCallData = await jsPromise.toDart;
-
-      // Create and return the web call implementation
       return VapiWebCall.create(
         _vapiJs,
-        jsCallData,
+        assistantConfig,
         waitUntilActive: waitUntilActive,
       );
     } catch (e) {
-      if (e is VapiException) {
+      if (e is VapiException || e is VapiError) {
         rethrow;
       }
-      throw VapiJoinFailedException('Failed to start web call: $e');
+      throw VapiStartCallException('Failed to start web call: $e');
     }
   }
 
   @override
   void dispose() {
-    // Stop any active calls
     try {
       _vapiJs.stop();
     } catch (e) {
-      // Ignore errors during cleanup
+      // Nothing we can do here
     }
-  }
-
-  @override
-  String toString() {
-    return 'VapiWebClient(publicKey: ${publicKey.substring(0, 8)}...)';
   }
 } 
 
@@ -150,7 +130,7 @@ class VapiWebClient implements VapiClientInterface {
 /// [apiBaseUrl] defaults to the production Vapi API.
 getImplementation({
   required String publicKey,
-  required String apiBaseUrl,
+  String apiBaseUrl = defaultApiBaseUrl,
 }) {
-  return VapiWebClient(publicKey, apiBaseUrl: apiBaseUrl);
+  return VapiWebClient(publicKey: publicKey, apiBaseUrl: apiBaseUrl);
 }

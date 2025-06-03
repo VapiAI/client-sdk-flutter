@@ -1,5 +1,7 @@
 import 'vapi_call_interface.dart';
 
+const String defaultApiBaseUrl = 'https://api.vapi.ai';
+
 /// Abstract interface defining the contract for Vapi client implementations.
 /// 
 /// This interface ensures consistent behavior across different platforms
@@ -9,7 +11,6 @@ import 'vapi_call_interface.dart';
 /// guaranteeing a unified API experience for developers.
 abstract interface class VapiClientInterface {
 
-  
   /// The public API key used for authentication with Vapi services.
   /// 
   /// This key is provided by Vapi and identifies your application.

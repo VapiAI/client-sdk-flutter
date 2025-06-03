@@ -230,6 +230,7 @@ We welcome contributions! The factory pattern architecture makes it easy to:
 - [ ] Desktop support (Windows/macOS/Linux)
 - [ ] Advanced audio features
 - [ ] Multiple simultaneous calls
+- [ ] Handle hot reloads and hot restart by disposing the client on web!
 
 ## License
 

@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'dart:js_interop';
 import '../../vapi_call_interface.dart';
-import '../../types/errors.dart';
-import '../../types/vapi_event.dart';
-import '../../types/vapi_audio_device.dart';
-import '../../types/vapi_call_status.dart';
+import '../../shared/errors.dart';
+import '../../shared/exceptions.dart';
+import '../../shared/vapi_event.dart';
+import '../../shared/vapi_audio_device.dart';
+import '../../shared/vapi_call_status.dart';
+import '../../shared/assistant_config.dart';
+import '../../shared/vapi_call_monitor.dart';
+import '../../shared/vapi_call_transport.dart';
 import 'vapi_js_interop.dart';
 
 /// Web-specific implementation of a Vapi call using the Vapi Web SDK.
@@ -36,21 +40,54 @@ class VapiWebCall implements VapiCallInterface {
   /// Whether the microphone is currently muted
   bool _isMuted = false;
 
-  // Call metadata (extracted from JavaScript call data)
+  /// Current status of the call (starting, active, ended).
+  @override
+  VapiCallStatus get status => _status;
+
+  /// Stream of events that occur during the call lifecycle.
+  @override
+  Stream<VapiEvent> get onEvent => _streamController.stream;
+
+  // Call metadata from Vapi API response
+  /// Unique identifier for this call.
   @override
   final String id;
   
-  @override
-  final String assistantId;
-  
+  /// Organization ID associated with this call.
   @override
   final String orgId;
   
+  /// Timestamp when this call was created.
   @override
   final DateTime createdAt;
   
+  /// Timestamp when this call was last updated.
   @override
   final DateTime updatedAt;
+  
+  /// Type of the call (e.g., "webCall").
+  @override
+  final String type;
+  
+  /// Monitor configuration for this call.
+  @override
+  final VapiCallMonitor monitor;
+  
+  /// Transport configuration for this call.
+  @override
+  final VapiCallTransport transport;
+  
+  /// Web call URL for joining the call.
+  @override
+  final String webCallUrl;
+  
+  /// ID of the assistant handling this call.
+  @override
+  final String assistantId;
+  
+  /// Assistant configuration overrides for this call.
+  @override
+  final Map<String, dynamic> assistantOverrides;
 
   /// Creates a new VapiWebCall instance.
   /// 
@@ -58,19 +95,18 @@ class VapiWebCall implements VapiCallInterface {
   VapiWebCall._(
     this._vapiJs,
     this.id,
-    this.assistantId,
     this.orgId,
     this.createdAt,
     this.updatedAt,
+    this.type,
+    this.monitor,
+    this.transport,
+    this.webCallUrl,
+    this.assistantId,
+    this.assistantOverrides,
   ) {
     _setupEventListeners();
   }
-
-  @override
-  VapiCallStatus get status => _status;
-
-  @override
-  Stream<VapiEvent> get onEvent => _streamController.stream;
 
   /// Factory method to create a VapiWebCall with JavaScript call data.
   /// 
@@ -78,40 +114,54 @@ class VapiWebCall implements VapiCallInterface {
   /// and optionally waits for the call to become active.
   static Future<VapiWebCall> create(
     VapiJs vapiJs,
-    JSObject jsCallData, {
+    AssistantConfig assistantConfig, {
     bool waitUntilActive = false,
   }) async {
-    // Parse the JavaScript call data
-    final callData = jsCallData.dartify() as Map<String, dynamic>;
-    
-    final id = callData['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString();
-    final assistantId = callData['assistantId']?.toString() ?? '';
-    final orgId = callData['orgId']?.toString() ?? '';
-    final createdAt = DateTime.tryParse(callData['createdAt']?.toString() ?? '') ?? DateTime.now();
-    final updatedAt = DateTime.tryParse(callData['updatedAt']?.toString() ?? '') ?? DateTime.now();
+    late final JSObject jsCallData;
+    try {
+      jsCallData = await vapiJs.start(
+        assistantConfig.getAssistantValue(asJs: true), 
+        assistantConfig.assistantOverrides.jsify() as JSObject
+      ).toDart;
+    } catch (e) {
+      // nothing we can do here apparently the future completes with an
+      // error (see next line) and to catch it we have to wrap the await.
+      // From tests the promise also fails when the underlying HTTP request
+      // has succeeds with a non-200 status code - most likely Vapi Web SDK throws
+      throw VapiClientCreationError('Failed to start web call: $e');
+    }
 
-    // Create the call instance
+    final callData = jsCallData.dartify() as Map<Object?, Object?>;
+    
+    final id = callData['id']!.toString();
+    final orgId = callData['orgId']!.toString();
+    final createdAt = DateTime.tryParse(callData['createdAt']!.toString())!;
+    final updatedAt = DateTime.tryParse(callData['updatedAt']!.toString())!;
+    final type = callData['type']!.toString();
+    final monitor = VapiCallMonitor.fromJson(callData['monitor'] as Map<Object?, Object?>);
+    final transport = VapiCallTransport.fromJson(callData['transport'] as Map<Object?, Object?>);
+    final webCallUrl = callData['webCallUrl']!.toString();
+    final assistantId = callData['assistantId']!.toString();
+    final assistantOverrides = Map<String, dynamic>.from(callData['assistantOverrides'] as Map<String, dynamic>);
+
     final call = VapiWebCall._(
       vapiJs,
       id,
-      assistantId,
       orgId,
       createdAt,
       updatedAt,
+      type,
+      monitor,
+      transport,
+      webCallUrl,
+      assistantId,
+      assistantOverrides,
     );
 
-    try {
-      // Wait for the call to become active if requested
-      if (waitUntilActive) {
-        await call._activeCallCompleter.future;
-      }
-
-      return call;
-    } catch (e) {
-      // Cleanup on failure
-      call.dispose();
-      rethrow;
+    if (waitUntilActive) {
+      await call._activeCallCompleter.future;
     }
+    return call;
   }
 
   /// Sets up event listeners for the Vapi Web SDK.
@@ -119,7 +169,6 @@ class VapiWebCall implements VapiCallInterface {
   /// This method converts Web SDK events into Vapi events and
   /// manages the call lifecycle state.
   void _setupEventListeners() {
-    // Set up JavaScript event listeners using Function.toJS
     final onCallStart = ((JSAny? data) {
       _status = VapiCallStatus.active;
       
@@ -202,21 +251,6 @@ class VapiWebCall implements VapiCallInterface {
   }
 
   @override
-  void dispose() {
-    if (_isDisposed) return;
-    
-    _isDisposed = true;
-    _status = VapiCallStatus.ended;
-    
-    // Cleanup resources
-    _streamController.close();
-    
-    if (!_activeCallCompleter.isCompleted) {
-      _activeCallCompleter.completeError(const VapiCallEndedException());
-    }
-  }
-
-  @override
   bool get isMuted => _isMuted;
 
   @override
@@ -233,35 +267,15 @@ class VapiWebCall implements VapiCallInterface {
     }
   }
 
+  /// Sets the audio output device for this call using Vapi's audio device enum
+  /// 
+  /// Audio device management is typically handled by the browser
+  /// This is a no-op on web platforms as audio routing is managed
+  /// by the browser's media system and user preferences
   @override
   void setAudioDevice({VapiAudioDevice? device}) {
     if (_status == VapiCallStatus.ended || _isDisposed) {
-      throw const VapiCallEndedException();
-    }
-
-    // Audio device management is typically handled by the browser
-    // This is a no-op on web platforms as audio routing is managed
-    // by the browser's media system and user preferences
-    
-    // Note: Web browsers handle audio device selection through
-    // their own UI, so this method is provided for API compatibility
-    // but doesn't perform any action on the web platform
-  }
-
-  /// Make the assistant say something during the call.
-  /// 
-  /// This is a web-specific feature available in the Vapi Web SDK.
-  /// [message] is the text for the assistant to speak.
-  /// [endCallAfterSpoken] optionally ends the call after speaking.
-  void say(String message, {bool? endCallAfterSpoken}) {
-    if (_status == VapiCallStatus.ended || _isDisposed) {
-      throw const VapiCallEndedException();
-    }
-
-    try {
-      _vapiJs.say(message, endCallAfterSpoken);
-    } catch (e) {
-      throw VapiException('Failed to make assistant speak', e);
+      throw UnimplementedError('Audio device management is typically handled by the browser - this is a no-op on web platforms');
     }
   }
 
@@ -273,7 +287,16 @@ class VapiWebCall implements VapiCallInterface {
   }
 
   @override
-  String toString() {
-    return 'VapiWebCall(id: $id, status: $status, assistantId: $assistantId)';
+  void dispose() {
+    if (_isDisposed) return;
+    
+    _isDisposed = true;
+    _status = VapiCallStatus.ended;
+    
+    _streamController.close();
+    
+    if (!_activeCallCompleter.isCompleted) {
+      _activeCallCompleter.completeError(const VapiCallEndedException());
+    }
   }
 } 

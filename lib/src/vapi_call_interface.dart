@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'types/vapi_event.dart';
-import 'types/vapi_call_status.dart';
-import 'types/vapi_audio_device.dart';
+import 'shared/vapi_event.dart';
+import 'shared/vapi_call_status.dart';
+import 'shared/vapi_audio_device.dart';
+import 'shared/vapi_call_monitor.dart';
+import 'shared/vapi_call_transport.dart';
 
 /// Abstract interface defining the contract for Vapi call implementations.
 /// 
@@ -18,6 +20,9 @@ abstract interface class VapiCallInterface {
   
   /// ID of the assistant handling this call.
   String get assistantId;
+
+  /// Assistant configuration overrides for this call.
+  Map<String, dynamic> get assistantOverrides;
   
   /// Organization ID associated with this call.
   String get orgId;
@@ -30,6 +35,18 @@ abstract interface class VapiCallInterface {
   
   /// Current status of the call (starting, active, ended).
   VapiCallStatus get status;
+
+  /// Type of the call (e.g., "webCall").
+  String get type;
+  
+  /// Monitor configuration for this call.
+  VapiCallMonitor get monitor;
+  
+  /// Transport configuration for this call.
+  VapiCallTransport get transport;
+  
+  /// Web call URL for joining the call.
+  String get webCallUrl;
 
   // Audio control functionality
   

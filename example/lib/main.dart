@@ -104,14 +104,14 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Vapi Test App'),
+          title: const SelectableText('Vapi Test App'),
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
+              const SelectableText(
                 'Vapi Flutter SDK Demo',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),

@@ -5,8 +5,9 @@ import 'package:daily_flutter/daily_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../vapi_client_interface.dart';
 import '../../vapi_call_interface.dart';
-import '../../types/errors.dart';
-import 'vapi_mobile_call.dart';
+import '../../shared/exceptions.dart';
+import '../../shared/assistant_config.dart';
+import 'vapi_mobile_call.dart'; 
 
 /// Mobile-specific implementation of the Vapi client.
 /// 
@@ -29,9 +30,9 @@ class VapiMobileClient implements VapiClientInterface {
   /// 
   /// [publicKey] is required for API authentication.
   /// [apiBaseUrl] defaults to the production Vapi API.
-  VapiMobileClient(
-    this.publicKey, {
-    this.apiBaseUrl = 'https://api.vapi.ai',
+  VapiMobileClient({
+    required this.publicKey,
+    this.apiBaseUrl = defaultApiBaseUrl,
   }) {
     if (publicKey.isEmpty) {
       throw const VapiConfigurationException('Public key cannot be empty');
@@ -112,32 +113,25 @@ class VapiMobileClient implements VapiClientInterface {
       'Content-Type': 'application/json',
     };
 
-    late final Map<String, dynamic> requestBody;
-    if (assistantId != null) {
-      requestBody = {
-        'assistantId': assistantId,
-        'assistantOverrides': assistantOverrides
-      };
-    } else {
-      requestBody = {
-        'assistant': assistant,
-        'assistantOverrides': assistantOverrides
-      };
-    }
+    final assistantConfig = AssistantConfig(
+      assistantId: assistantId, 
+      assistant: assistant, 
+      assistantOverrides: assistantOverrides
+    );
 
     final response = await http.post(
       url, 
       headers: headers, 
-      body: jsonEncode(requestBody),
+      body: jsonEncode(assistantConfig.createRequestBody()),
     );
 
     if (response.statusCode != 201) {
-      throw VapiJoinFailedException('Failed to create call: ${response.body}');
+      throw VapiStartCallException('Failed to create call: ${response.body}');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     if (data['webCallUrl'] == null) {
-      throw const VapiJoinFailedException('Call URL not found in response');
+      throw const VapiStartCallException('Call URL not found in response');
     }
 
     return data;
@@ -165,7 +159,7 @@ class VapiMobileClient implements VapiClientInterface {
     }
 
     // This should never be reached due to the rethrow above, but added for completeness
-    throw const VapiMaxRetriesExceededException();
+    throw const VapiStartCallException();
   }
 
   /// Creates a CallClient with a timeout.
@@ -177,14 +171,14 @@ class VapiMobileClient implements VapiClientInterface {
       return await CallClient.create().timeout(
         timeout,
         onTimeout: () {
-          throw const VapiClientTimeoutException();
+          throw const VapiStartCallException();
         },
       );
     } catch (error) {
-      if (error is VapiClientTimeoutException) {
+      if (error is VapiStartCallException) {
         rethrow;
       }
-      throw VapiClientCreationFailedException(error);
+      throw VapiStartCallException(error);
     }
   }
 } 
@@ -196,7 +190,7 @@ class VapiMobileClient implements VapiClientInterface {
 /// [apiBaseUrl] defaults to the production Vapi API.
 getImplementation({
   required String publicKey,
-  required String apiBaseUrl,
+  String apiBaseUrl = defaultApiBaseUrl,
 }) {
-  return VapiMobileClient(publicKey, apiBaseUrl: apiBaseUrl);
+  return VapiMobileClient(publicKey: publicKey, apiBaseUrl: apiBaseUrl);
 }
