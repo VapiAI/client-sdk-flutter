@@ -5,7 +5,7 @@ import '../../types/errors.dart';
 import '../../types/vapi_event.dart';
 import '../../types/vapi_audio_device.dart';
 import '../../types/vapi_call_status.dart';
-import 'js_interop.dart';
+import 'vapi_js_interop.dart';
 
 /// Web-specific implementation of a Vapi call using the Vapi Web SDK.
 /// 
@@ -19,7 +19,7 @@ import 'js_interop.dart';
 /// - Web-optimized audio controls
 class VapiWebCall implements VapiCallInterface {
   /// The underlying JavaScript Vapi instance
-  final VapiJS _vapi;
+  final VapiJs _vapiJs;
 
   /// Stream controller for broadcasting Vapi events for this call.
   final _streamController = StreamController<VapiEvent>.broadcast();
@@ -56,7 +56,7 @@ class VapiWebCall implements VapiCallInterface {
   /// 
   /// This constructor is typically called internally by [VapiWebClient.start].
   VapiWebCall._(
-    this._vapi,
+    this._vapiJs,
     this.id,
     this.assistantId,
     this.orgId,
@@ -77,12 +77,12 @@ class VapiWebCall implements VapiCallInterface {
   /// This method parses the JavaScript call object, sets up event listeners,
   /// and optionally waits for the call to become active.
   static Future<VapiWebCall> create(
-    VapiJS vapi,
+    VapiJs vapiJs,
     JSObject jsCallData, {
     bool waitUntilActive = false,
   }) async {
     // Parse the JavaScript call data
-    final callData = jsObjectToDartMap(jsCallData);
+    final callData = jsCallData.dartify() as Map<String, dynamic>;
     
     final id = callData['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString();
     final assistantId = callData['assistantId']?.toString() ?? '';
@@ -92,7 +92,7 @@ class VapiWebCall implements VapiCallInterface {
 
     // Create the call instance
     final call = VapiWebCall._(
-      vapi,
+      vapiJs,
       id,
       assistantId,
       orgId,
@@ -137,14 +137,14 @@ class VapiWebCall implements VapiCallInterface {
 
     final onMessage = ((JSAny? data) {
       if (data != null && data.isA<JSObject>()) {
-        final message = jsObjectToDartMap(data as JSObject);
+        final message = data.dartify() as Map<String, dynamic>;
         _emit(VapiEvent('message', message));
       }
     }).toJS;
 
     final onError = ((JSAny? error) {
       final errorData = error != null && error.isA<JSObject>() 
-          ? jsObjectToDartMap(error as JSObject)
+          ? error.dartify() as Map<String, dynamic>
           : {'message': error?.toString() ?? 'Unknown error'};
       _emit(VapiEvent('call-error', errorData));
     }).toJS;
@@ -165,13 +165,13 @@ class VapiWebCall implements VapiCallInterface {
     }).toJS;
 
     // Register event listeners with the Vapi Web SDK
-    _vapi.on('call-start', onCallStart);
-    _vapi.on('call-end', onCallEnd);
-    _vapi.on('message', onMessage);
-    _vapi.on('error', onError);
-    _vapi.on('speech-start', onSpeechStart);
-    _vapi.on('speech-end', onSpeechEnd);
-    _vapi.on('volume-level', onVolumeLevel);
+    _vapiJs.on('call-start', onCallStart);
+    _vapiJs.on('call-end', onCallEnd);
+    _vapiJs.on('message', onMessage);
+    _vapiJs.on('error', onError);
+    _vapiJs.on('speech-start', onSpeechStart);
+    _vapiJs.on('speech-end', onSpeechEnd);
+    _vapiJs.on('volume-level', onVolumeLevel);
   }
 
   @override
@@ -181,8 +181,8 @@ class VapiWebCall implements VapiCallInterface {
     }
 
     try {
-      final jsMessage = dartMapToJS(message);
-      _vapi.send(jsMessage);
+      final jsMessage = message.jsify() as JSObject;
+      _vapiJs.send(jsMessage);
     } catch (e) {
       throw VapiException('Failed to send message', e);
     }
@@ -195,7 +195,7 @@ class VapiWebCall implements VapiCallInterface {
     }
 
     try {
-      _vapi.stop();
+      _vapiJs.stop();
     } catch (e) {
       // Ignore errors when stopping
     }
@@ -226,7 +226,7 @@ class VapiWebCall implements VapiCallInterface {
     }
     
     try {
-      _vapi.setMuted(muted);
+      _vapiJs.setMuted(muted);
       _isMuted = muted;
     } catch (e) {
       throw VapiException('Failed to set mute state', e);
@@ -259,7 +259,7 @@ class VapiWebCall implements VapiCallInterface {
     }
 
     try {
-      _vapi.say(message, endCallAfterSpoken);
+      _vapiJs.say(message, endCallAfterSpoken);
     } catch (e) {
       throw VapiException('Failed to make assistant speak', e);
     }

@@ -8,6 +8,8 @@ import 'vapi_call_interface.dart';
 /// All platform-specific implementations must conform to this interface,
 /// guaranteeing a unified API experience for developers.
 abstract interface class VapiClientInterface {
+
+  
   /// The public API key used for authentication with Vapi services.
   /// 
   /// This key is provided by Vapi and identifies your application.
@@ -35,6 +37,7 @@ abstract interface class VapiClientInterface {
     String? assistantId,
     Map<String, dynamic>? assistant,
     Map<String, dynamic> assistantOverrides = const {},
+    Duration clientCreationTimeoutDuration = const Duration(seconds: 10),
     bool waitUntilActive = false,
   });
 

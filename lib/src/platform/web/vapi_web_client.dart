@@ -1,10 +1,14 @@
-import 'dart:async';
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe'; // only used during registerWith library registration
+import 'dart:async';
+
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+
 import '../../vapi_client_interface.dart';
 import '../../vapi_call_interface.dart';
 import '../../types/errors.dart';
-import 'js_interop.dart';
 import 'vapi_web_call.dart';
+import 'vapi_js_interop.dart';
 
 /// Web-specific implementation of the Vapi client.
 /// 
@@ -24,7 +28,35 @@ class VapiWebClient implements VapiClientInterface {
   final String apiBaseUrl;
 
   /// The underlying JavaScript Vapi instance
-  late final VapiJS _vapi;
+  late final VapiJs _vapiJs;
+
+  /// The Vapi Web SDK CDN URL with the currenly supported version
+  static const _cdnUrl = "https://cdn.jsdelivr.net/npm/@vapi-ai/web@2.3.1/+esm";
+
+  /// Whether the Vapi Web SDK script has been injected into the document
+  static bool _scriptInjected = false;
+
+  /// A completer that is completed when the Vapi Web SDK script is loaded
+  static final _scriptLoadedCompleter = Completer<void>();
+
+  /// Called by Flutter's web plugin registrant at startup.
+  static void registerWith(Registrar registrar) {
+    if (!_scriptInjected) {
+      final cdnUrlJs = '$_cdnUrl'.toJS;
+      final modulePromise = importModule(cdnUrlJs).toDart;
+      
+      modulePromise.then((module) {
+        final esModule = module.getProperty('default'.toJS);
+        final moduleName = 'VapiEsModule'.toJS;
+        globalContext.setProperty(moduleName, esModule);
+        _scriptLoadedCompleter.complete();
+      }).catchError((e) {
+        _scriptLoadedCompleter.completeError(e);
+      });
+
+      _scriptInjected = true;
+    }
+  }
 
   /// Creates a new web Vapi client.
   /// 
@@ -39,8 +71,12 @@ class VapiWebClient implements VapiClientInterface {
       throw const VapiConfigurationException('Public key cannot be empty');
     }
 
+    if (!_scriptInjected || !_scriptLoadedCompleter.isCompleted) {
+      throw VapiConfigurationException('Vapi Web SDK script not loaded - injection status: $_scriptInjected, completion status: ${_scriptLoadedCompleter.isCompleted}');
+    }
+
     try {
-      _vapi = VapiJS(publicKey);
+      _vapiJs = VapiJs(publicKey, apiBaseUrl as JSAny);
     } catch (e) {
       throw VapiConfigurationException('Failed to initialize Vapi Web SDK: $e');
     }
@@ -51,6 +87,7 @@ class VapiWebClient implements VapiClientInterface {
     String? assistantId,
     Map<String, dynamic>? assistant,
     Map<String, dynamic> assistantOverrides = const {},
+    Duration clientCreationTimeoutDuration = const Duration(seconds: 10),
     bool waitUntilActive = false,
   }) async {
     // Validate input parameters
@@ -64,21 +101,21 @@ class VapiWebClient implements VapiClientInterface {
       if (assistantId != null) {
         assistantConfig = assistantId.toJS;
       } else {
-        assistantConfig = dartMapToJS(assistant!);
+        assistantConfig = assistant!.jsify() as JSAny;
       }
 
       // Prepare assistant overrides if provided
       final JSObject? jsOverrides = assistantOverrides.isNotEmpty 
-          ? dartMapToJS(assistantOverrides)
+          ? assistantOverrides.jsify() as JSObject
           : null;
 
       // Start the call using the Web SDK with modern Promise handling
-      final jsPromise = _vapi.start(assistantConfig, jsOverrides);
+      final jsPromise = _vapiJs.start(assistantConfig, jsOverrides);
       final jsCallData = await jsPromise.toDart;
 
       // Create and return the web call implementation
       return VapiWebCall.create(
-        _vapi,
+        _vapiJs,
         jsCallData,
         waitUntilActive: waitUntilActive,
       );
@@ -94,7 +131,7 @@ class VapiWebClient implements VapiClientInterface {
   void dispose() {
     // Stop any active calls
     try {
-      _vapi.stop();
+      _vapiJs.stop();
     } catch (e) {
       // Ignore errors during cleanup
     }

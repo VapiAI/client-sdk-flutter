@@ -43,40 +43,35 @@ class VapiMobileClient implements VapiClientInterface {
     String? assistantId,
     Map<String, dynamic>? assistant,
     Map<String, dynamic> assistantOverrides = const {},
+    Duration clientCreationTimeoutDuration = const Duration(seconds: 10),
     bool waitUntilActive = false,
   }) async {
-    // Validate input parameters
     if (assistantId == null && assistant == null) {
       throw const VapiMissingAssistantException();
     }
 
-    // Request necessary permissions for mobile
     await _requestMicrophonePermission();
 
-    // Create the call on Vapi servers
     final apiResponse = await _createVapiCall(
       assistantId: assistantId,
       assistant: assistant,
       assistantOverrides: assistantOverrides,
     );
 
-    // Create and configure the Daily client
-    const clientCreationTimeout = Duration(seconds: 10);
-    final client = await _createClientWithRetries(clientCreationTimeout);
+    final client = await _createClientWithRetries(clientCreationTimeoutDuration);
 
     try {
-      // Create and return the mobile call implementation
       return await VapiMobileCall.create(
         client, 
         apiResponse, 
         waitUntilActive: waitUntilActive
       );
     } catch (e) {
-      // Cleanup on failure
       client.dispose();
       rethrow;
     }
   }
+
 
   @override
   void dispose() {
@@ -93,11 +88,9 @@ class VapiMobileClient implements VapiClientInterface {
     var microphoneStatus = await Permission.microphone.request();
     
     if (microphoneStatus.isDenied) {
-      // Retry once if initially denied
       microphoneStatus = await Permission.microphone.request();
       
       if (microphoneStatus.isPermanentlyDenied) {
-        // Guide user to app settings if permanently denied
         await openAppSettings();
         return;
       }
@@ -119,15 +112,17 @@ class VapiMobileClient implements VapiClientInterface {
       'Content-Type': 'application/json',
     };
 
-    // Build request body based on provided parameters
-    final Map<String, dynamic> requestBody = {
-      'assistantOverrides': assistantOverrides,
-    };
-
+    late final Map<String, dynamic> requestBody;
     if (assistantId != null) {
-      requestBody['assistantId'] = assistantId;
+      requestBody = {
+        'assistantId': assistantId,
+        'assistantOverrides': assistantOverrides
+      };
     } else {
-      requestBody['assistant'] = assistant;
+      requestBody = {
+        'assistant': assistant,
+        'assistantOverrides': assistantOverrides
+      };
     }
 
     final response = await http.post(
@@ -160,18 +155,16 @@ class VapiMobileClient implements VapiClientInterface {
 
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        return await _createClientWithTimeout(clientCreationTimeoutDuration);
+        final client = await _createClientWithTimeout(clientCreationTimeoutDuration);
+        return client;
       } catch (error) {
         if (attempt >= maxRetries) {
-          throw const VapiMaxRetriesExceededException();
+          rethrow;
         }
-        
-        // Wait before retrying (exponential backoff)
-        await Future.delayed(Duration(milliseconds: 100 * attempt));
       }
     }
 
-    // This should never be reached due to the rethrow above
+    // This should never be reached due to the rethrow above, but added for completeness
     throw const VapiMaxRetriesExceededException();
   }
 
@@ -183,7 +176,9 @@ class VapiMobileClient implements VapiClientInterface {
     try {
       return await CallClient.create().timeout(
         timeout,
-        onTimeout: () => throw const VapiClientTimeoutException(),
+        onTimeout: () {
+          throw const VapiClientTimeoutException();
+        },
       );
     } catch (error) {
       if (error is VapiClientTimeoutException) {
@@ -191,11 +186,6 @@ class VapiMobileClient implements VapiClientInterface {
       }
       throw VapiClientCreationFailedException(error);
     }
-  }
-
-  @override
-  String toString() {
-    return 'VapiMobileClient(publicKey: ${publicKey.substring(0, 8)}...)';
   }
 } 
 

@@ -91,12 +91,14 @@ class VapiClient implements VapiClientInterface {
     String? assistantId,
     Map<String, dynamic>? assistant,
     Map<String, dynamic> assistantOverrides = const {},
+    Duration clientCreationTimeoutDuration = const Duration(seconds: 10),
     bool waitUntilActive = false,
   }) {
     return _implementation.start(
       assistantId: assistantId,
       assistant: assistant,
       assistantOverrides: assistantOverrides,
+      clientCreationTimeoutDuration: clientCreationTimeoutDuration,
       waitUntilActive: waitUntilActive,
     );
   }
