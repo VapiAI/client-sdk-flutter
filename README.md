@@ -1,237 +1,209 @@
 # Vapi Flutter SDK
 
-## Overview
+## Minimum requirements
 
-The Vapi Flutter SDK provides seamless integration with the Vapi voice AI platform across multiple platforms. This SDK uses a modern factory pattern architecture that automatically selects the appropriate implementation based on your target platform.
+### Mobile
 
-### Supported Platforms
+This package relies heavily on the [`daily_flutter`](https://pub.dev/packages/daily_flutter) package. Please refer to the [daily_flutter pub.dev page](https://pub.dev/packages/daily_flutter) for the most up-to-date version constraints and platform requirements.
 
-- ✅ **Mobile** (iOS/Android) - Using Daily.co WebRTC
-- ✅ **Web** - Using Vapi Web SDK with JavaScript interop
-  - Modern `dart:js_interop` implementation (future-proof & Wasm compatible)
-  - Extension types with full compile-time checking
-  - No deprecated APIs - ready for long-term use
-- 🔮 **Desktop** - Planned for future releases
+### Web
 
-## Architecture
+- No special requirements. The Vapi Web SDK is loaded under the hood via [jsdelivr](https://www.jsdelivr.com/), and a specific version is hardcoded to ensure compatibility with this Flutter package. For more details, see `lib/src/platform/web/vapi_web_client.dart`.
 
-The SDK uses a clean factory pattern with platform-specific implementations:
+## Setup
+
+Add `vapi` as a dependency:
 
 ```
-VapiClient (Factory)
-├── VapiMobileClient (iOS/Android)
-│   └── VapiMobileCall
-└── VapiWebClient (Web)
-    └── VapiWebCall
+flutter pub add vapi
 ```
 
-### Key Benefits
+Then, follow the platform-specific setup instructions for `permission_handler`:
 
-- **Automatic Platform Detection**: No need to worry about platform-specific code
-- **Unified API**: Same code works across all platforms
-- **Platform Optimizations**: Each platform uses the most efficient implementation
-- **Type Safety**: Full compile-time checking with platform-specific features
-- **Easy Extension**: Simple to add new platforms in the future
+### iOS
 
-## Installation
+According to the permission_handler instructions above, add the permission flags for microphone.
 
-Add this to your package's `pubspec.yaml` file:
+Also add this to your Info.plist:
 
-```yaml
-dependencies:
-  vapi: ^0.1.0
+```
+<key>NSMicrophoneUsageDescription</key>
+<string>This app requires access to the microphone for live audio calls.</string>
 ```
 
-## Quick Start
+You'll also need to ensure this is set in your Podfile:
+
+```ruby
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+        '$(inherited)',
+
+        'PERMISSION_MICROPHONE=1',
+      ]
+    end
+  end
+end
+```
+
+We also recommend adding the audio background mode to your app's capabilities.
+
+### Android
+
+Add the necessary permissions to your AndroidManifest.xml:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+```
+
+Add the permission flags for microphone according to the permission_handler instructions above.
+
+---
+
+### Web
+
+> No setup is required for web! However, please note:
+>
+> **Hot restart/hot reload caveat:**
+> Web does not fully support hot restart or hot reload if a call is still active and wasn't properly finished. If you attempt to start a new call after a hot restart/hot reload while a previous call is still active, the underlying web SDK will not be refreshed and will throw an error about a call still being active. **Solution:** After a hot restart/hot reload, reload the browser window as well. If the call was finished/ended normally, everything will work as expected.
+
+## Usage
+
+First, import the Vapi class from the package:
 
 ```dart
 import 'package:vapi/vapi.dart';
+```
 
-// Create a client - automatically selects platform implementation
-final client = VapiClient('your-public-key');
+Then, create a new instance of the Vapi class, passing your Public Key as a parameter to the constructor:
 
-// Start a call
-final call = await client.start(assistantId: 'your-assistant-id');
+```dart
+var vapi = Vapi('your-public-key');
+```
 
-// Listen to events
-call.onEvent.listen((event) {
-  switch (event.label) {
-    case 'call-start':
-      print('Assistant is ready and listening');
-    case 'call-end':
-      print('Call has ended');
-    case 'message':
-      print('Message: ${event.value}');
-  }
+You can start a new call by calling the `start` method and passing an `assistant` object or `assistantId`:
+
+```dart
+await vapi.start(assistant: {
+  "model": {
+    "provider": "openai",
+    "model": "gpt-3.5-turbo",
+    "systemPrompt": "You're an assistant..."
+  },
+   "voice": {
+    "provider": "11labs",
+    "voiceId": "burt",
+  },
+  ...
 });
-
-// Send a message
-await call.send({
-  'type': 'add-message',
-  'message': {
-    'role': 'system',
-    'content': 'Hello from Flutter!'
-  }
-});
-
-// Clean up
-await call.stop();
-call.dispose();
-client.dispose();
 ```
 
-## Platform-Specific Features
-
-### Mobile-Only Features
-
 ```dart
-// Access mobile-specific features through type checking
-if (call is VapiMobileCall) {
-  // Audio device management
-  call.setAudioDevice(device: VapiAudioDevice.speakerphone);
-  
-  // Access transport information
-  print('Transport: ${call.transport.provider}');
-  print('Monitor URL: ${call.monitor.listenUrl}');
-}
+await vapi.start(assistantId: "your-assistant-id");
 ```
 
-### Web Features
+The `start` method will initiate a new call.
+
+You can override existing assistant parameters or set variables with the `assistant_overrides` parameter.
+Assume the first message is `Hey, {{name}} how are you?` and you want to set the value of `name` to `John`:
 
 ```dart
-// Access web-specific features through type checking
-if (call is VapiWebCall) {
-  // Make the assistant say something (web-specific feature)
-  call.say('Hello! I have something to tell you.');
-  
-  // End call after speaking
-  call.say('Goodbye!', endCallAfterSpoken: true);
-  
-  // Note: Audio device management is handled by browser
-  // setAudioDevice() is a no-op on web platforms
-}
-```
+final assistantOverrides = {
+  'recordingEnabled': false,
+  'variableValues': {
+    'name': 'John',
+  },
+};
 
-## Migration from v0.0.x
-
-The new factory pattern maintains API compatibility while providing better architecture:
-
-### Before (v0.0.x)
-```dart
-final vapi = VapiClient('key');
-final call = await vapi.start(assistantId: 'id');
-```
-
-### After (v0.1.x)
-```dart
-final client = VapiClient('key');  // Same constructor
-final call = await client.start(assistantId: 'id');  // Same method
-// But now with automatic platform selection!
-```
-
-### Breaking Changes
-
-- Return type changed from `VapiCall` to `VapiCallInterface` 
-- Platform-specific features now accessed through type checking
-- Added `client.dispose()` for proper resource cleanup
-
-## API Reference
-
-### VapiClient
-
-The main factory class that creates platform-appropriate implementations.
-
-```dart
-// Create a client
-final client = VapiClient(
-  'your-public-key',
-  apiBaseUrl: 'https://api.vapi.ai', // Optional
+await vapi.start(
+  assistantId: 'your-assistant-id',
+  assistantOverrides: assistantOverrides,
 );
-
-// Start a call
-final call = await client.start(
-  assistantId: 'assistant-id',              // Option 1: Use existing assistant
-  assistant: {...},                         // Option 2: Inline configuration
-  assistantOverrides: {...},                // Optional: Override settings
-  waitUntilActive: false,                   // Optional: Wait for assistant
-);
-
-// Clean up
-client.dispose();
 ```
 
-### VapiCallInterface
-
-The unified interface for managing calls across platforms.
+You can send text messages to the assistant aside from the audio input using the `send` method and passing appropriate `role` and `content`.
 
 ```dart
-// Call information
-print(call.id);
-print(call.assistantId);
-print(call.status);
-print(call.createdAt);
-
-// Event listening
-call.onEvent.listen((event) {
-  // Handle events
+vapi.send({
+  "type": "add-message",
+  "message": {
+    "role": "system",
+    "content": "The user has pressed the button, say peanuts",
+  },
 });
 
-// Audio controls
-call.setMuted(true);
-final isMuted = call.isMuted;
-
-// Send messages
-await call.send({'type': 'add-message', ...});
-
-// End call
-await call.stop();
-call.dispose();
 ```
 
-## Error Handling
+Possible values for the role are `system`, `user`, `assistant`, `tool` or `function`.
+
+You can stop the session by calling the `stop` method:
 
 ```dart
-try {
-  final client = VapiClient('your-key');
-  final call = await client.start(assistantId: 'assistant-id');
-} on VapiConfigurationException catch (e) {
-  print('Configuration error: $e');
-} on VapiMissingAssistantException catch (e) {
-  print('Assistant error: $e');
-} on VapiJoinFailedException catch (e) {
-  print('Connection error: $e');
-} catch (e) {
-  print('Unexpected error: $e');
-}
+await vapi.stop();
 ```
 
-## Examples
+This will stop the recording and close the connection.
 
-Check out the `/example` folder for complete implementations:
+The `setMuted(muted: boolean)` can be used to mute and un-mute the user's microphone.
 
-- **Basic Usage**: Simple call start/stop functionality
-- **Event Handling**: Comprehensive event listening examples
-- **Platform Features**: Demonstrating platform-specific capabilities
+```dart
+vapi.isMuted(); // false
+vapi.setMuted(true);
+vapi.isMuted(); // true
+```
 
-## Contributing
+### Events
 
-We welcome contributions! The factory pattern architecture makes it easy to:
+You can listen to the following events:
 
-1. **Add New Platforms**: Implement the interfaces for new platforms
-2. **Improve Existing Platforms**: Enhance mobile or web implementations
-3. **Add Features**: Extend the interface with new capabilities
+```dart
+vapi.onEvent.listen((event) {
+    if (event.label == "call-start") {
+        print('call started');
+    }
+    if (event.label == "call-end") {
+        print('call ended');
+    }
 
-## Roadmap
+    // Speech statuses, function calls and transcripts will be sent via messages
+    if (event.label == "message") {
+        print(event.value);
+    }
+});
+```
 
-- [x] Mobile support (iOS/Android) with Daily.co WebRTC
-- [x] Factory pattern architecture
-- [x] Unified API across platforms
-- [x] Web support with Vapi Web SDK
-- [ ] Desktop support (Windows/macOS/Linux)
-- [ ] Advanced audio features
-- [ ] Multiple simultaneous calls
-- [ ] Handle hot reloads and hot restart by disposing the client on web!
+These events allow you to react to changes in the state of the call or speech.
+
+## Example
+
+An example can be found in the repo [here](example/lib/main.dart)
 
 ## License
 
-MIT License - see the [LICENSE](LICENSE) file for details.
+```
+MIT License
+
+Copyright (c) 2023 Vapi Labs Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
