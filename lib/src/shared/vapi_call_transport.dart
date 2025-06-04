@@ -19,11 +19,11 @@ class VapiCallTransport {
   });
 
   /// Creates a VapiCallTransport from a JSON object.
-  factory VapiCallTransport.fromJson(Map<Object?, Object?> json) {
+  factory VapiCallTransport.fromJson(Map<String, dynamic> json) {
     return VapiCallTransport(
-      provider: json['provider'] as String,
-      assistantVideoEnabled: json['assistantVideoEnabled'] as bool,
-      callUrl: json['callUrl'] as String,
+      provider: json['provider'],
+      assistantVideoEnabled: json['assistantVideoEnabled'],
+      callUrl: json['callUrl'],
     );
   }
 }

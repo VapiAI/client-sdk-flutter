@@ -117,6 +117,11 @@ class VapiWebCall implements VapiCallInterface {
     AssistantConfig assistantConfig, {
     bool waitUntilActive = false,
   }) async {
+
+    vapiJs.on("listening", (JSAny? data) {
+      print("here");
+    }.toJS);
+
     late final JSObject jsCallData;
     try {
       jsCallData = await vapiJs.start(
@@ -131,18 +136,21 @@ class VapiWebCall implements VapiCallInterface {
       throw VapiClientCreationError('Failed to start web call: $e');
     }
 
-    final callData = jsCallData.dartify() as Map<Object?, Object?>;
+    final callDataTmp = jsCallData.dartify() as Map<Object?, Object?>;
+    final callData = Map<String, dynamic>.from(callDataTmp);
     
-    final id = callData['id']!.toString();
-    final orgId = callData['orgId']!.toString();
-    final createdAt = DateTime.tryParse(callData['createdAt']!.toString())!;
-    final updatedAt = DateTime.tryParse(callData['updatedAt']!.toString())!;
-    final type = callData['type']!.toString();
-    final monitor = VapiCallMonitor.fromJson(callData['monitor'] as Map<Object?, Object?>);
-    final transport = VapiCallTransport.fromJson(callData['transport'] as Map<Object?, Object?>);
-    final webCallUrl = callData['webCallUrl']!.toString();
-    final assistantId = callData['assistantId']!.toString();
-    final assistantOverrides = Map<String, dynamic>.from(callData['assistantOverrides'] as Map<String, dynamic>);
+    final id = callData['id'];
+    final orgId = callData['orgId'];
+    final createdAt = DateTime.tryParse(callData['createdAt'])!;
+    final updatedAt = DateTime.tryParse(callData['updatedAt'])!;
+    final type = callData['type'];
+    final monitorTmp = Map<String, dynamic>.from(callData['monitor']);
+    final monitor = VapiCallMonitor.fromJson(monitorTmp);
+    final transportTmp = Map<String, dynamic>.from(callData['transport']);
+    final transport = VapiCallTransport.fromJson(transportTmp);
+    final webCallUrl = callData['webCallUrl'];
+    final assistantId = callData['assistantId'];
+    final assistantOverrides = Map<String, dynamic>.from(callData['assistantOverrides']);
 
     final call = VapiWebCall._(
       vapiJs,
@@ -164,63 +172,81 @@ class VapiWebCall implements VapiCallInterface {
     return call;
   }
 
-  /// Sets up event listeners for the Vapi Web SDK.
-  /// 
-  /// This method converts Web SDK events into Vapi events and
-  /// manages the call lifecycle state.
-  void _setupEventListeners() {
-    final onCallStart = ((JSAny? data) {
-      _status = VapiCallStatus.active;
-      
-      if (!_activeCallCompleter.isCompleted) {
-        _activeCallCompleter.complete();
-      }
-      
-      _emit(const VapiEvent('call-start'));
-    }).toJS;
+  /// This method manages the call lifecycle state.
+  void _eventListener(String event, [JSAny? data]) {    
+    switch (event) {
+      case 'call-start':
+        _emit(const VapiEvent('call-start'));
+        break;
 
-    final onCallEnd = ((JSAny? data) {
-      _status = VapiCallStatus.ended;
-      _emit(const VapiEvent('call-end'));
-    }).toJS;
+      case 'call-end':
+        _emit(const VapiEvent('call-end'));
+        break;
 
-    final onMessage = ((JSAny? data) {
-      if (data != null && data.isA<JSObject>()) {
-        final message = data.dartify() as Map<String, dynamic>;
+      case 'speech-start':
+        _emit(const VapiEvent('speech-start'));
+        break;
+
+      case 'speech-end':
+        _emit(const VapiEvent('speech-end'));
+        break;
+
+      case 'daily-participant-updated':
+        final updatedParticipant = Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
+        _emit(VapiEvent('daily-participant-updated', updatedParticipant));
+        break;
+
+      case 'volume-level':
+        // emits a double value
+        _emit(VapiEvent('volume-level', data.dartify()));
+        break;
+
+      case 'message':
+        final message = Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
+        final type = message['type'];
+        
+        if (type == "status-update") {
+          final status = message['status'];
+          if (status == "in-progress") {
+            _status = VapiCallStatus.active;
+          } else if (status == "ended") {
+            _status = VapiCallStatus.ended;
+          }
+        }
+
         _emit(VapiEvent('message', message));
-      }
-    }).toJS;
+        break;
 
-    final onError = ((JSAny? error) {
-      final errorData = error != null && error.isA<JSObject>() 
-          ? error.dartify() as Map<String, dynamic>
-          : {'message': error?.toString() ?? 'Unknown error'};
-      _emit(VapiEvent('call-error', errorData));
-    }).toJS;
+      case 'error':
+        final error = Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
+        _emit(VapiEvent('error', error));
+        break;
+    }
+  }
 
-    final onSpeechStart = ((JSAny? data) {
-      _emit(const VapiEvent('speech-start'));
-    }).toJS;
+  /// Helper to wrap event listeners for JS interop, accepting zero or one argument.
+  JSFunction _wrapEventListener(String event) {
+    // Accepts zero or one argument from JS
+    return (([JSAny? data]) => _eventListener(event, data)).toJS;
+  }
 
-    final onSpeechEnd = ((JSAny? data) {
-      _emit(const VapiEvent('speech-end'));
-    }).toJS;
+  /// Emits a VapiEvent to all listeners of this call.
+  void _emit(VapiEvent event) {
+    if (!_isDisposed) {
+      _streamController.add(event);
+    }
+  }
 
-    final onVolumeLevel = ((JSAny? data) {
-      if (data != null && data.isA<JSNumber>()) {
-        final volume = (data as JSNumber).toDartDouble;
-        _emit(VapiEvent('volume-level', volume));
-      }
-    }).toJS;
-
-    // Register event listeners with the Vapi Web SDK
-    _vapiJs.on('call-start', onCallStart);
-    _vapiJs.on('call-end', onCallEnd);
-    _vapiJs.on('message', onMessage);
-    _vapiJs.on('error', onError);
-    _vapiJs.on('speech-start', onSpeechStart);
-    _vapiJs.on('speech-end', onSpeechEnd);
-    _vapiJs.on('volume-level', onVolumeLevel);
+  /// Sets up event listeners for the Vapi Web SDK.
+  void _setupEventListeners() {
+    _vapiJs.on('daily-participant-updated', _wrapEventListener('daily-participant-updated'));
+    _vapiJs.on('call-start', _wrapEventListener('call-start'));
+    _vapiJs.on('call-end', _wrapEventListener('call-end'));
+    _vapiJs.on('speech-start', _wrapEventListener('speech-start'));
+    _vapiJs.on('speech-end', _wrapEventListener('speech-end'));
+    _vapiJs.on('volume-level', _wrapEventListener('volume-level'));
+    _vapiJs.on('message', _wrapEventListener('message'));
+    _vapiJs.on('error', _wrapEventListener('error'));
   }
 
   @override
@@ -240,7 +266,7 @@ class VapiWebCall implements VapiCallInterface {
   @override
   Future<void> stop() async {
     if (_status == VapiCallStatus.ended || _isDisposed) {
-      return; // Already stopped
+      throw const VapiCallEndedException();
     }
 
     try {
@@ -263,7 +289,7 @@ class VapiWebCall implements VapiCallInterface {
       _vapiJs.setMuted(muted);
       _isMuted = muted;
     } catch (e) {
-      throw VapiException('Failed to set mute state', e);
+      throw VapiException('Failed to set mute state - unknown error occurred', e);
     }
   }
 
@@ -274,16 +300,7 @@ class VapiWebCall implements VapiCallInterface {
   /// by the browser's media system and user preferences
   @override
   void setAudioDevice({VapiAudioDevice? device}) {
-    if (_status == VapiCallStatus.ended || _isDisposed) {
-      throw UnimplementedError('Audio device management is typically handled by the browser - this is a no-op on web platforms');
-    }
-  }
-
-  /// Emits a VapiEvent to all listeners of this call.
-  void _emit(VapiEvent event) {
-    if (!_isDisposed) {
-      _streamController.add(event);
-    }
+    throw UnimplementedError('Audio device management is typically handled by the browser - this is a no-op on web platforms');
   }
 
   @override

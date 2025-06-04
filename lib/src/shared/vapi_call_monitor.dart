@@ -15,10 +15,10 @@ class VapiCallMonitor {
   });
 
   /// Creates a VapiCallMonitor from a JSON object.
-  factory VapiCallMonitor.fromJson(Map<Object?, Object?> json) {
+  factory VapiCallMonitor.fromJson(Map<String, dynamic> json) {
     return VapiCallMonitor(
-      listenUrl: json['listenUrl'] as String,
-      controlUrl: json['controlUrl'] as String,
+      listenUrl: json['listenUrl'],
+      controlUrl: json['controlUrl'],
     );
   }
 }
