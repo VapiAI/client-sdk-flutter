@@ -21,8 +21,8 @@ class _MyAppState extends State<MyApp> {
   VapiCallInterface? currentCall;
   
   // Controllers for text fields
-  final TextEditingController _publicKeyController = TextEditingController(text: '4d029458-5fa2-412d-8b2e-d035f4770461');
-  final TextEditingController _assistantIdController = TextEditingController(text: '7c1b1ce4-6966-4d70-be6e-1bb8ea5183de');
+  final TextEditingController _publicKeyController = TextEditingController();
+  final TextEditingController _assistantIdController = TextEditingController();
 
   @override
   void initState() {

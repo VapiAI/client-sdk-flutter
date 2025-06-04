@@ -1,5 +1,3 @@
-import 'dart:js_interop';
-
 import 'exceptions.dart';
 
 class AssistantConfig {
@@ -36,11 +34,7 @@ class AssistantConfig {
   }
 
   /// Returns the assistant value, which can be either an assistantId or an assistant object.
-  dynamic getAssistantValue({bool asJs = false}) {
-    if (asJs) {
-      return assistantId?.toJS ?? assistant?.jsify();
-    } else {
-      return assistantId ?? assistant;
-    }
+  dynamic getAssistantValue() {
+    return assistantId ?? assistant;
   }
 }

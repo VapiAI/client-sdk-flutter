@@ -178,6 +178,14 @@ vapi.onEvent.listen((event) {
 
 These events allow you to react to changes in the state of the call or speech.
 
+## Troubleshooting
+
+### Choppy or Interrupted Calls
+
+If calls feel choppy or abrupt (abgehackt), this is often caused by the agent hearing itself and being interrupted. This typically happens when the agent's voice output is picked up by the microphone, creating a feedback loop where the agent stops speaking because it thinks the user is interrupting.
+
+This issue is more common in development environments or when using simulators/emulators with intermediate audio layers. On real devices, the operating system automatically filters out audio that is being played through the speakers from the microphone input stream (echo cancellation), preventing this self-interruption problem.
+
 ## Example
 
 An example can be found in the repo [here](example/lib/main.dart)

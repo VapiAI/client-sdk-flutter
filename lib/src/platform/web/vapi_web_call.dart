@@ -123,10 +123,13 @@ class VapiWebCall implements VapiCallInterface {
       print("here");
     }.toJS);
 
+    final assistantValue = assistantConfig.getAssistantValue();
+    final jsAssistantValue = assistantValue as JSAny;
+
     late final JSObject jsCallData;
     try {
       jsCallData = await vapiJs.start(
-        assistantConfig.getAssistantValue(asJs: true), 
+        jsAssistantValue, 
         assistantConfig.assistantOverrides.jsify() as JSObject
       ).toDart;
     } catch (e) {
