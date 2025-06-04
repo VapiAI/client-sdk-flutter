@@ -180,10 +180,13 @@ class VapiWebCall implements VapiCall {
   void _eventListener(String event, [JSAny? data]) {    
     switch (event) {
       case 'call-start':
+        _status = VapiCallStatus.active;
+        _activeCallCompleter.complete();
         _emit(const VapiEvent('call-start'));
         break;
 
       case 'call-end':
+        _status = VapiCallStatus.ended;
         _emit(const VapiEvent('call-end'));
         break;
 
@@ -207,18 +210,6 @@ class VapiWebCall implements VapiCall {
 
       case 'message':
         final message = Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
-        final type = message['type'];
-        
-        if (type == "status-update") {
-          final status = message['status'];
-          if (status == "in-progress") {
-            _status = VapiCallStatus.active;
-            _activeCallCompleter.complete();
-          } else if (status == "ended") {
-            _status = VapiCallStatus.ended;
-          }
-        }
-
         _emit(VapiEvent('message', message));
         break;
 
