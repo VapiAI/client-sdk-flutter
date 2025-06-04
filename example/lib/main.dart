@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:vapi/vapi.dart';
 
-void main() {
+void main() async {
+  // Wait for the Vapi SDK to be ready (required for web, instant on mobile)
+  await VapiClient.platformInitialized.future;
   runApp(const MyApp());
 }
 

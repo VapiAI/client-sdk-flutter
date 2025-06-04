@@ -18,6 +18,18 @@ Add `vapi` as a dependency:
 flutter pub add vapi
 ```
 
+Then, before creating a VapiClient or calling runApp in your main function, ensure the platform is initialized:
+
+```dart
+void main() async {
+  // Wait for the Vapi SDK to be ready (required for web, instant on mobile)
+  await VapiClient.platformInitialized.future;
+  runApp(const MyApp());
+}
+```
+
+> **Note:** This is required on web to ensure the Vapi Web SDK is loaded before you create a client or start a call. On mobile, this will complete instantly.
+
 Then, follow the platform-specific setup instructions for `permission_handler`:
 
 ### iOS

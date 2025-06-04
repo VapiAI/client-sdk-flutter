@@ -37,6 +37,9 @@ class VapiClient implements VapiClientInterface {
   /// This is useful to check if the client is ready to be used. 
   /// For example, when a [VapiClientCreationError] is thrown, 
   /// the platform might not been initialized yet.
+  /// 
+  /// Note: This completer can also complete with [VapiClientCreationError] 
+  /// if there is an error initializing the platform SDK.
   static Completer<void> get platformInitialized => getPlatformInitialized();
   
   /// The platform-specific implementation
