@@ -31,6 +31,14 @@ import 'platform/mobile/vapi_mobile_client.dart'
 /// client.dispose();
 /// ```
 class VapiClient implements VapiClientInterface {
+
+  /// Whether the underlying platform has been initialized.
+  /// 
+  /// This is useful to check if the client is ready to be used. 
+  /// For example, when a [VapiClientCreationError] is thrown, 
+  /// the platform might not been initialized yet.
+  static Completer<void> get platformInitialized => getPlatformInitialized();
+  
   /// The platform-specific implementation
   final VapiClientInterface _implementation;
 
@@ -120,4 +128,4 @@ class VapiClient implements VapiClientInterface {
   String toString() {
     return 'VapiClient(platform: ${kIsWeb ? 'web' : 'mobile'}, publicKey: ${publicKey.substring(0, 8)}...)';
   }
-} 
+}

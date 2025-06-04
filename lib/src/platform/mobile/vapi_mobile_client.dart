@@ -194,3 +194,8 @@ getImplementation({
 }) {
   return VapiMobileClient(publicKey: publicKey, apiBaseUrl: apiBaseUrl);
 }
+
+/// Returns a completer that is already completed
+Completer<void> getPlatformInitialized() {
+  return Completer<void>()..complete();
+}

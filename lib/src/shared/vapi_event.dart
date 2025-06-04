@@ -50,4 +50,5 @@ class VapiEvent {
   factory VapiEvent.fromMessage(Map<String, dynamic> message) {
     return VapiEvent('message', message);
   }
-} 
+}
+ 

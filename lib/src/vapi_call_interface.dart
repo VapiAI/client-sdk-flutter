@@ -103,4 +103,4 @@ abstract interface class VapiCall {
   /// 
   /// [device] - The audio device to use for the call
   void setAudioDevice({VapiAudioDevice? device});
-} 
+}

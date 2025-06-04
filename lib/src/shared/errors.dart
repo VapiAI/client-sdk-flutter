@@ -17,6 +17,14 @@ class VapiError extends Error {
 
   /// Creates a new [VapiError] with the given [message] and optional [details].
   VapiError(this.message, [this.details]);
+
+  @override
+  String toString() {
+    if (details != null) {
+      return 'VapiError: $message - Details: $details';
+    }
+    return 'VapiError: $message';
+  }
 }
 
 /// Error thrown when the Vapi client cannot be created 

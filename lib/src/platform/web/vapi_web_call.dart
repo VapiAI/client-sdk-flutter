@@ -213,6 +213,7 @@ class VapiWebCall implements VapiCall {
           final status = message['status'];
           if (status == "in-progress") {
             _status = VapiCallStatus.active;
+            _activeCallCompleter.complete();
           } else if (status == "ended") {
             _status = VapiCallStatus.ended;
           }
@@ -320,4 +321,4 @@ class VapiWebCall implements VapiCall {
       _activeCallCompleter.completeError(const VapiCallEndedException());
     }
   }
-} 
+}

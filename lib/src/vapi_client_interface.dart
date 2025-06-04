@@ -47,4 +47,4 @@ abstract interface class VapiClientInterface {
   /// Should be called when the client is no longer needed to prevent
   /// memory leaks and ensure proper cleanup.
   void dispose();
-} 
+}

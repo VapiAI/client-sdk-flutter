@@ -134,3 +134,8 @@ getImplementation({
 }) {
   return VapiWebClient(publicKey: publicKey, apiBaseUrl: apiBaseUrl);
 }
+
+/// Returns a completer that is completed when the Vapi Web SDK script is loaded
+Completer<void> getPlatformInitialized() {
+  return VapiWebClient._scriptLoadedCompleter;
+}
