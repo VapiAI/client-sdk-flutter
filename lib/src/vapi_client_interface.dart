@@ -31,10 +31,10 @@ abstract interface class VapiClientInterface {
   /// [assistantOverrides] allows overriding assistant settings or setting template variables.
   /// [waitUntilActive] determines whether to wait until the call becomes active before returning.
   /// 
-  /// Returns a [VapiCallInterface] instance for interacting with the call.
+  /// Returns a [VapiCall] instance for interacting with the call.
   /// 
   /// Throws [VapiException] if the call cannot be started.
-  Future<VapiCallInterface> start({
+  Future<VapiCall> start({
     String? assistantId,
     Map<String, dynamic>? assistant,
     Map<String, dynamic> assistantOverrides = const {},

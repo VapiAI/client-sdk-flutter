@@ -80,7 +80,7 @@ class VapiClient implements VapiClientInterface {
   /// [waitUntilActive] determines whether to wait until the call is active before returning.
   /// When true, the method will wait for the assistant to start listening before returning.
   /// 
-  /// Returns a [VapiCallInterface] instance that can be used to interact with the call.
+  /// Returns a [VapiCall] instance that can be used to interact with the call.
   /// 
   /// Throws:
   /// - [VapiMissingAssistantException] if neither assistantId nor assistant is provided
@@ -89,7 +89,7 @@ class VapiClient implements VapiClientInterface {
   /// - [VapiClientCreationFailedException] if client creation fails
   /// - [VapiMaxRetriesExceededException] if maximum retry attempts are exceeded
   @override
-  Future<VapiCallInterface> start({
+  Future<VapiCall> start({
     String? assistantId,
     Map<String, dynamic>? assistant,
     Map<String, dynamic> assistantOverrides = const {},

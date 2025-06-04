@@ -18,7 +18,7 @@ class _MyAppState extends State<MyApp> {
   bool isCallStarted = false;
   
   VapiClient? vapiClient;
-  VapiCallInterface? currentCall;
+  VapiCall? currentCall;
   
   // Controllers for text fields
   final TextEditingController _publicKeyController = TextEditingController();

@@ -50,7 +50,7 @@ import '../../shared/vapi_call_transport.dart';
 /// // Clean up resources
 /// call.dispose();
 /// ```
-class VapiMobileCall implements VapiCallInterface {
+class VapiMobileCall implements VapiCall {
   /// The underlying Daily call client for this call.
   final CallClient _call;
 

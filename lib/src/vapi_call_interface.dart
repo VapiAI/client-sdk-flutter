@@ -12,7 +12,7 @@ import 'shared/vapi_call_transport.dart';
 /// 
 /// Each platform implementation handles the underlying communication
 /// (WebRTC, WebSocket, etc.) while exposing a unified API.
-abstract interface class VapiCallInterface {
+abstract interface class VapiCall {
   // Core call metadata - available on all platforms
   
   /// Unique identifier for this call session.

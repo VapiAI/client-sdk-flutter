@@ -22,7 +22,7 @@ import 'vapi_js_interop.dart';
 /// - Automatic permission handling
 /// - Event streaming and call management
 /// - Web-optimized audio controls
-class VapiWebCall implements VapiCallInterface {
+class VapiWebCall implements VapiCall {
   /// The underlying JavaScript Vapi instance
   final VapiJs _vapiJs;
 

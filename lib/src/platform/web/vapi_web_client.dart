@@ -86,7 +86,7 @@ class VapiWebClient implements VapiClientInterface {
   }
 
   @override
-  Future<VapiCallInterface> start({
+  Future<VapiCall> start({
     String? assistantId,
     Map<String, dynamic>? assistant,
     Map<String, dynamic> assistantOverrides = const {},
