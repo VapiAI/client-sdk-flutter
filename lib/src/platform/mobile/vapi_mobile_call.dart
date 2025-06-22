@@ -281,10 +281,23 @@ class VapiMobileCall implements VapiCall {
         }
         
         _streamController.add(const VapiEvent("call-start"));
+        return;
       }
 
-      _streamController.add(VapiEvent("message", parsedMessage));
+      // TODO: look into this double json decode as apparently msg gets wrapped in double quotes
+      final messageMap = jsonDecode(jsonDecode(msg));
+      if (messageMap['type'] == "speech-update") {
+        if (messageMap['status'] == "started") {
+          _streamController.add(const VapiEvent("speech-start"));
+        } else if (messageMap['status'] == "stopped") {
+          _streamController.add(const VapiEvent("speech-end"));
+        }
+        return;
+      }
+
+      _streamController.add(VapiEvent("message", messageMap));
     } catch (parseError) {
+      print('parseError: $parseError');
       // Silently ignore parse errors
     }
   }
