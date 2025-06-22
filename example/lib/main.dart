@@ -4,7 +4,7 @@ import 'package:vapi/vapi.dart';
 void main() async {
   // Wait for the Vapi SDK to be ready (required for web, instant on mobile)
   await VapiClient.platformInitialized.future;
-  runApp(const MyApp());
+  runApp(const MaterialApp(home: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -103,79 +103,77 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const SelectableText('Vapi Test App'),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SelectableText(
-                'Vapi Flutter SDK Demo',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    return Scaffold(
+      appBar: AppBar(
+        title: const SelectableText('Vapi Test App'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SelectableText(
+              'Vapi Flutter SDK Demo',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _publicKeyController,
+              decoration: const InputDecoration(
+                labelText: 'VAPI Public Key',
+                border: OutlineInputBorder(),
+                hintText: 'Enter your VAPI public key',
               ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _assistantIdController,
+              decoration: const InputDecoration(
+                labelText: 'VAPI Assistant ID',
+                border: OutlineInputBorder(),
+                hintText: 'Enter your VAPI assistant ID',
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: isLoading ? null : _onButtonPressed,
+              child: Text(buttonText),
+            ),
+            const SizedBox(height: 16),
+            if (currentCall != null) ...[
+              Text('Call Status: ${currentCall!.status}'),
+              const SizedBox(height: 8),
+              Text('Call ID: ${currentCall!.id}'),
+              const SizedBox(height: 8),
+              Text('Assistant ID: ${currentCall!.assistantId}'),
               const SizedBox(height: 16),
-              TextField(
-                controller: _publicKeyController,
-                decoration: const InputDecoration(
-                  labelText: 'VAPI Public Key',
-                  border: OutlineInputBorder(),
-                  hintText: 'Enter your VAPI public key',
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      final isMuted = currentCall!.isMuted;
+                      currentCall!.setMuted(!isMuted);
+                      setState(() {}); // Refresh to update mute status
+                    },
+                    child: Text(currentCall!.isMuted ? 'Unmute' : 'Mute'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      await currentCall!.send({
+                        'type': 'add-message',
+                        'message': {
+                          'role': 'system',
+                          'content': 'The user pressed a button!'
+                        }
+                      });
+                    },
+                    child: const Text('Send Message'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _assistantIdController,
-                decoration: const InputDecoration(
-                  labelText: 'VAPI Assistant ID',
-                  border: OutlineInputBorder(),
-                  hintText: 'Enter your VAPI assistant ID',
-                ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: isLoading ? null : _onButtonPressed,
-                child: Text(buttonText),
-              ),
-              const SizedBox(height: 16),
-              if (currentCall != null) ...[
-                Text('Call Status: ${currentCall!.status}'),
-                const SizedBox(height: 8),
-                Text('Call ID: ${currentCall!.id}'),
-                const SizedBox(height: 8),
-                Text('Assistant ID: ${currentCall!.assistantId}'),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        final isMuted = currentCall!.isMuted;
-                        currentCall!.setMuted(!isMuted);
-                        setState(() {}); // Refresh to update mute status
-                      },
-                      child: Text(currentCall!.isMuted ? 'Unmute' : 'Mute'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        await currentCall!.send({
-                          'type': 'add-message',
-                          'message': {
-                            'role': 'system',
-                            'content': 'The user pressed a button!'
-                          }
-                        });
-                      },
-                      child: const Text('Send Message'),
-                    ),
-                  ],
-                ),
-              ],
             ],
-          ),
+          ],
         ),
       ),
     );
