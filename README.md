@@ -2,13 +2,13 @@
 
 ## Minimum requirements
 
-The Daily Client SDK for Flutter requires the following versions:
+### Mobile
 
-- Flutter ≥ 3.0.0
-- iOS ≥ 13.0 (objective-C and Swift applications are supported)
-- Android compileSdkVersion ≥ 33
-- Android minSdkVersion ≥ 24
-- Android NDK ≥ 25.1.8937393
+This package relies heavily on the [`daily_flutter`](https://pub.dev/packages/daily_flutter) package. Please refer to the [daily_flutter pub.dev page](https://pub.dev/packages/daily_flutter) for the most up-to-date version constraints and platform requirements.
+
+### Web
+
+- No special requirements. The Vapi Web SDK is loaded under the hood via [jsdelivr](https://www.jsdelivr.com/), and a specific version is hardcoded to ensure compatibility with this Flutter package. For more details, see `lib/src/platform/web/vapi_web_client.dart`.
 
 ## Setup
 
@@ -17,6 +17,18 @@ Add `vapi` as a dependency:
 ```
 flutter pub add vapi
 ```
+
+Then, before creating a VapiClient or calling runApp in your main function, ensure the platform is initialized:
+
+```dart
+void main() async {
+  // Wait for the Vapi SDK to be ready (required for web, instant on mobile)
+  await VapiClient.platformInitialized.future;
+  runApp(const MyApp());
+}
+```
+
+> **Note:** This is required on web to ensure the Vapi Web SDK is loaded before you create a client or start a call. On mobile, this will complete instantly.
 
 Then, follow the platform-specific setup instructions for `permission_handler`:
 
@@ -61,6 +73,15 @@ Add the necessary permissions to your AndroidManifest.xml:
 ```
 
 Add the permission flags for microphone according to the permission_handler instructions above.
+
+---
+
+### Web
+
+> No setup is required for web! However, please note:
+>
+> **Hot restart/hot reload caveat:**
+> Web does not fully support hot restart or hot reload if a call is still active and wasn't properly finished. If you attempt to start a new call after a hot restart/hot reload while a previous call is still active, the underlying web SDK will not be refreshed and will throw an error about a call still being active. **Solution:** After a hot restart/hot reload, reload the browser window as well. If the call was finished/ended normally, everything will work as expected.
 
 ## Usage
 
@@ -168,6 +189,14 @@ vapi.onEvent.listen((event) {
 ```
 
 These events allow you to react to changes in the state of the call or speech.
+
+## Troubleshooting
+
+### Choppy or Interrupted Calls
+
+If calls feel choppy or abrupt (abgehackt), this is often caused by the agent hearing itself and being interrupted. This typically happens when the agent's voice output is picked up by the microphone, creating a feedback loop where the agent stops speaking because it thinks the user is interrupting.
+
+This issue is more common in development environments or when using simulators/emulators with intermediate audio layers. On real devices, the operating system automatically filters out audio that is being played through the speakers from the microphone input stream (echo cancellation), preventing this self-interruption problem.
 
 ## Example
 
