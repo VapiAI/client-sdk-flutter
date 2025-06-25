@@ -1,0 +1,56 @@
+name: Publish to pub.dev
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.16.0'
+          channel: 'stable'
+      
+      - name: Verify version consistency
+        run: |
+          # Extract version from pubspec.yaml
+          PUBSPEC_VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //')
+          # Remove 'v' prefix from tag if present
+          TAG_VERSION=${GITHUB_REF_NAME#v}
+          
+          echo "Tag version: $TAG_VERSION"
+          echo "Pubspec version: $PUBSPEC_VERSION"
+          
+          if [ "$TAG_VERSION" != "$PUBSPEC_VERSION" ]; then
+            echo "Error: Tag version ($TAG_VERSION) does not match pubspec.yaml version ($PUBSPEC_VERSION)"
+            echo "Please ensure your tag matches the version in pubspec.yaml"
+            exit 1
+          fi
+          
+          echo "✓ Version check passed!"
+      
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Setup Dart credentials
+        run: |
+          mkdir -p ~/.pub-cache
+          echo '${{ secrets.PUB_CREDENTIALS }}' > ~/.pub-cache/credentials.json
+      
+      - name: Verify package scores
+        run: |
+          echo "Running package verification..."
+          flutter pub publish --dry-run
+      
+      - name: Publish to pub.dev
+        run: |
+          # Using --force because this runs in CI without user interaction
+          # The dry-run above ensures the package is valid before publishing
+          flutter pub publish --force
