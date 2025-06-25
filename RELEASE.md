@@ -4,19 +4,16 @@ This guide explains how to release new versions of the Vapi Flutter SDK to pub.d
 
 ## Initial Setup (One-time)
 
-### 1. Get pub.dev credentials
+### Enable Automated Publishing on pub.dev
 
-```bash
-./scripts/get_pub_credentials.sh
-```
+1. Go to [pub.dev](https://pub.dev) and sign in
+2. Navigate to your package page
+3. Go to the **Admin** tab
+4. Under **Automated Publishing**, click **Enable publishing from GitHub Actions**
+5. Enter your repository: `<your-github-username>/<your-repository-name>`
+6. Set tag pattern: `v{{version}}`
 
-If not logged in yet: `flutter pub login`
-
-### 2. Add to GitHub Secrets
-
-1. Go to Settings → Secrets and variables → Actions
-2. Add new secret: `PUB_CREDENTIALS`
-3. Paste the JSON content from step 1
+**Note:** You must be a verified publisher or have uploader permissions on the package.
 
 ## Release Process
 
@@ -58,24 +55,36 @@ git commit -m "chore: bump version to 0.2.0"
 git push origin main
 ```
 
-### 4. Create GitHub Release
+### 4. Create and push tag
 
-1. Go to Releases → Create a new release
-2. Create tag: `v0.2.0` (with 'v' prefix)
-3. Title: `v0.2.0`
-4. Copy notes from CHANGELOG.md
-5. Publish release
+```bash
+# Create tag matching the version
+git tag v0.2.0
 
-The GitHub Action will automatically publish to pub.dev.
+# Push the tag to trigger publishing
+git push origin v0.2.0
+```
+
+The GitHub Action will automatically publish to pub.dev using OIDC authentication.
 
 ### 5. Monitor
 
 Check the Actions tab for the "Publish to pub.dev" workflow status.
 
+### 6. Create GitHub Release (Optional)
+
+After successful publishing, you can create a GitHub release:
+
+1. Go to Releases → Create a new release
+2. Choose existing tag: `v0.2.0`
+3. Title: `v0.2.0`
+4. Copy notes from CHANGELOG.md
+5. Publish release
+
 ## Troubleshooting
 
-- **Tests failing**: Fix and create new release
-- **Credentials issue**: Verify `PUB_CREDENTIALS` secret
+- **Workflow not triggering**: Ensure tag matches pattern `v{{version}}`
+- **Authentication failed**: Verify automated publishing is enabled on pub.dev
 - **Version conflict**: Ensure version bump in pubspec.yaml
 - **Manual fallback**: `flutter pub publish`
 
