@@ -45,11 +45,8 @@ jobs:
       - name: Check pub score
         run: |
           dart pub global activate pana
-          export PATH="$PATH:$HOME/.pub-cache/bin"
-          # Allow for 10 point deduction due to dependency constraints
-          # (permission_handler is constrained by daily_flutter)
           echo "Running pana analysis..."
-          pana --no-warning --exit-code-threshold 10 | tee pana-output.txt
+          dart pub global run pana --no-warning --exit-code-threshold 10
           echo ""
           echo "Note: permission_handler is constrained to ^11.3.1 by daily_flutter 0.31.0"
           echo "This causes a 10-point deduction in the pub score."
