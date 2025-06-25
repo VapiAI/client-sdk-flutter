@@ -47,7 +47,23 @@ version: 0.2.0  # Update accordingly
 - Renamed method `oldName()` to `newName()`
 ```
 
-### 3. Commit and push
+### 3. Run validation checks
+
+Before committing, ensure all checks pass locally:
+
+```bash
+./scripts/run_checks.sh
+```
+
+This script runs the same checks as CI:
+
+- Code formatting
+- Static analysis
+- Unit tests
+- pub.dev score check
+- Package validation
+
+### 4. Commit and push
 
 ```bash
 git add pubspec.yaml CHANGELOG.md
@@ -55,7 +71,7 @@ git commit -m "chore: bump version to 0.2.0"
 git push origin main
 ```
 
-### 4. Create and push tag
+### 5. Create and push tag
 
 ```bash
 # Create tag matching the version
@@ -67,11 +83,11 @@ git push origin v0.2.0
 
 The GitHub Action will automatically publish to pub.dev using OIDC authentication.
 
-### 5. Monitor
+### 6. Monitor
 
 Check the Actions tab for the "Publish to pub.dev" workflow status.
 
-### 6. Create GitHub Release (Optional)
+### 7. Create GitHub Release (Optional)
 
 After successful publishing, you can create a GitHub release:
 
