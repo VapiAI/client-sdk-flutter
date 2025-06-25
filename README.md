@@ -227,3 +227,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+## Contributing
+
+### Development Setup
+
+For detailed instructions on setting up your development environment, please see [SETUP.md](SETUP.md).
+
+### Releasing
+
+For information on how to release new versions to pub.dev, please see [RELEASE.md](RELEASE.md).
