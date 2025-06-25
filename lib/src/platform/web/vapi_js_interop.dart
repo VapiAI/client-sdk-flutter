@@ -1,7 +1,7 @@
 import 'dart:js_interop';
 
-/// Extension type wrapper for the JavaScript Vapi instance 
-/// 
+/// Extension type wrapper for the JavaScript Vapi instance
+///
 /// This provides Dart bindings for the @vapi-ai/web package
 @JS("VapiEsModule.default")
 extension type VapiJs._(JSObject _) implements JSObject {
@@ -9,7 +9,8 @@ extension type VapiJs._(JSObject _) implements JSObject {
   external factory VapiJs(String apiKey, [JSAny? apiBaseUrl]);
 
   /// Start a call with assistant configuration
-  external JSPromise<JSObject> start(JSAny assistantConfig, [JSObject? overrides]);
+  external JSPromise<JSObject> start(JSAny assistantConfig,
+      [JSObject? overrides]);
 
   /// Stop the current call
   external void stop();

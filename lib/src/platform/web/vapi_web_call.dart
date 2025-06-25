@@ -13,10 +13,10 @@ import '../../shared/vapi_call_transport.dart';
 import 'vapi_js_interop.dart';
 
 /// Web-specific implementation of a Vapi call using the Vapi Web SDK.
-/// 
+///
 /// This implementation handles real-time voice communication in web browsers
 /// using the Vapi Web SDK's built-in WebRTC capabilities.
-/// 
+///
 /// Features:
 /// - Browser-native WebRTC communication
 /// - Automatic permission handling
@@ -53,45 +53,45 @@ class VapiWebCall implements VapiCall {
   /// Unique identifier for this call.
   @override
   final String id;
-  
+
   /// Organization ID associated with this call.
   @override
   final String orgId;
-  
+
   /// Timestamp when this call was created.
   @override
   final DateTime createdAt;
-  
+
   /// Timestamp when this call was last updated.
   @override
   final DateTime updatedAt;
-  
+
   /// Type of the call (e.g., "webCall").
   @override
   final String type;
-  
+
   /// Monitor configuration for this call.
   @override
   final VapiCallMonitor monitor;
-  
+
   /// Transport configuration for this call.
   @override
   final VapiCallTransport transport;
-  
+
   /// Web call URL for joining the call.
   @override
   final String webCallUrl;
-  
+
   /// ID of the assistant handling this call.
   @override
   final String assistantId;
-  
+
   /// Assistant configuration overrides for this call.
   @override
   final Map<String, dynamic> assistantOverrides;
 
   /// Creates a new VapiWebCall instance.
-  /// 
+  ///
   /// This constructor is typically called internally by [VapiWebClient.start].
   VapiWebCall._(
     this._vapiJs,
@@ -110,7 +110,7 @@ class VapiWebCall implements VapiCall {
   }
 
   /// Factory method to create a VapiWebCall with JavaScript call data.
-  /// 
+  ///
   /// This method parses the JavaScript call object, sets up event listeners,
   /// and optionally waits for the call to become active.
   static Future<VapiWebCall> create(
@@ -118,20 +118,23 @@ class VapiWebCall implements VapiCall {
     AssistantConfig assistantConfig, {
     bool waitUntilActive = false,
   }) async {
-
-    vapiJs.on("listening", (JSAny? data) {
-      print("here");
-    }.toJS);
+    // Listen for the 'listening' event to track connection status
+    vapiJs.on(
+        "listening",
+        (JSAny? data) {
+          // Connection established
+        }
+            .toJS);
 
     final assistantValue = assistantConfig.getAssistantValue();
     final jsAssistantValue = assistantValue as JSAny;
 
     late final JSObject jsCallData;
     try {
-      jsCallData = await vapiJs.start(
-        jsAssistantValue, 
-        assistantConfig.assistantOverrides.jsify() as JSObject
-      ).toDart;
+      jsCallData = await vapiJs
+          .start(jsAssistantValue,
+              assistantConfig.assistantOverrides.jsify() as JSObject)
+          .toDart;
     } catch (e) {
       // nothing we can do here apparently the future completes with an
       // error (see next line) and to catch it we have to wrap the await.
@@ -142,7 +145,7 @@ class VapiWebCall implements VapiCall {
 
     final callDataTmp = jsCallData.dartify() as Map<Object?, Object?>;
     final callData = Map<String, dynamic>.from(callDataTmp);
-    
+
     final id = callData['id'];
     final orgId = callData['orgId'];
     final createdAt = DateTime.tryParse(callData['createdAt'])!;
@@ -154,7 +157,8 @@ class VapiWebCall implements VapiCall {
     final transport = VapiCallTransport.fromJson(transportTmp);
     final webCallUrl = callData['webCallUrl'];
     final assistantId = callData['assistantId'];
-    final assistantOverrides = Map<String, dynamic>.from(callData['assistantOverrides']);
+    final assistantOverrides =
+        Map<String, dynamic>.from(callData['assistantOverrides']);
 
     final call = VapiWebCall._(
       vapiJs,
@@ -177,7 +181,7 @@ class VapiWebCall implements VapiCall {
   }
 
   /// This method manages the call lifecycle state.
-  void _eventListener(String event, [JSAny? data]) {    
+  void _eventListener(String event, [JSAny? data]) {
     switch (event) {
       case 'call-start':
         _status = VapiCallStatus.active;
@@ -199,7 +203,8 @@ class VapiWebCall implements VapiCall {
         break;
 
       case 'daily-participant-updated':
-        final updatedParticipant = Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
+        final updatedParticipant =
+            Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
         _emit(VapiEvent('daily-participant-updated', updatedParticipant));
         break;
 
@@ -209,12 +214,14 @@ class VapiWebCall implements VapiCall {
         break;
 
       case 'message':
-        final message = Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
+        final message =
+            Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
         _emit(VapiEvent('message', message));
         break;
 
       case 'error':
-        final error = Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
+        final error =
+            Map<String, dynamic>.from(data.dartify() as Map<Object?, Object?>);
         _emit(VapiEvent('error', error));
         break;
     }
@@ -235,7 +242,8 @@ class VapiWebCall implements VapiCall {
 
   /// Sets up event listeners for the Vapi Web SDK.
   void _setupEventListeners() {
-    _vapiJs.on('daily-participant-updated', _wrapEventListener('daily-participant-updated'));
+    _vapiJs.on('daily-participant-updated',
+        _wrapEventListener('daily-participant-updated'));
     _vapiJs.on('call-start', _wrapEventListener('call-start'));
     _vapiJs.on('call-end', _wrapEventListener('call-end'));
     _vapiJs.on('speech-start', _wrapEventListener('speech-start'));
@@ -280,34 +288,36 @@ class VapiWebCall implements VapiCall {
     if (_status == VapiCallStatus.ended || _isDisposed) {
       throw const VapiCallEndedException();
     }
-    
+
     try {
       _vapiJs.setMuted(muted);
       _isMuted = muted;
     } catch (e) {
-      throw VapiException('Failed to set mute state - unknown error occurred', e);
+      throw VapiException(
+          'Failed to set mute state - unknown error occurred', e);
     }
   }
 
   /// Sets the audio output device for this call using Vapi's audio device enum
-  /// 
+  ///
   /// Audio device management is typically handled by the browser
   /// This is a no-op on web platforms as audio routing is managed
   /// by the browser's media system and user preferences
   @override
   void setAudioDevice({VapiAudioDevice? device}) {
-    throw UnimplementedError('Audio device management is typically handled by the browser - this is a no-op on web platforms');
+    throw UnimplementedError(
+        'Audio device management is typically handled by the browser - this is a no-op on web platforms');
   }
 
   @override
   void dispose() {
     if (_isDisposed) return;
-    
+
     _isDisposed = true;
     _status = VapiCallStatus.ended;
-    
+
     _streamController.close();
-    
+
     if (!_activeCallCompleter.isCompleted) {
       _activeCallCompleter.completeError(const VapiCallEndedException());
     }

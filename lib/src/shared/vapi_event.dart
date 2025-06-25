@@ -1,14 +1,14 @@
 /// Represents an event that occurs during the Vapi call lifecycle.
-/// 
+///
 /// Events are emitted by the Vapi client to inform your application
 /// about important state changes and messages during a call.
-/// 
+///
 /// Common event types include:
 /// - `call-start`: Emitted when the assistant connects and starts listening
 /// - `call-end`: Emitted when the call ends
 /// - `call-error`: Emitted when an error occurs during call setup
 /// - `message`: Emitted when a message is received from the assistant
-/// 
+///
 /// Example usage:
 /// ```dart
 /// vapi.onEvent.listen((event) {
@@ -27,13 +27,13 @@
 /// ```
 class VapiEvent {
   /// The type/label of the event that occurred.
-  /// 
+  ///
   /// This string identifies what kind of event happened and helps
   /// your application respond appropriately.
   final String label;
-  
+
   /// Optional data associated with the event.
-  /// 
+  ///
   /// The type and structure of this value depends on the event type:
   /// - For `message` events, this contains the parsed message data
   /// - For error events, this may contain error details
@@ -44,11 +44,10 @@ class VapiEvent {
   const VapiEvent(this.label, [this.value]);
 
   /// Creates a VapiEvent from a message received during a call.
-  /// 
+  ///
   /// This factory method is used to create message events from incoming
   /// data during a call session.
   factory VapiEvent.fromMessage(Map<String, dynamic> message) {
     return VapiEvent('message', message);
   }
 }
- 
