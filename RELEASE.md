@@ -36,20 +36,49 @@ flutter pub login
 
 ### 1. Update version in pubspec.yaml
 
+Follow semantic versioning (MAJOR.MINOR.PATCH):
+
+- **MAJOR** (1.0.0 → 2.0.0): Breaking changes
+  - Removing/renaming public APIs
+  - Changing method signatures
+  - Major behavior changes that require code updates
+  
+- **MINOR** (0.1.0 → 0.2.0): New features & improvements
+  - Adding new methods or classes
+  - Adding optional parameters
+  - Performance improvements
+  - Bug fixes (can also be patch)
+  
+- **PATCH** (0.1.0 → 0.1.1): Bug fixes only
+  - Fixing bugs without changing APIs
+  - Documentation updates
+  - Internal refactoring
+
 ```yaml
-version: 0.2.0  # Update this to your new version
+version: 0.2.0  # Update according to your changes
 ```
 
 ### 2. Update CHANGELOG.md
 
-Add a new section for your version with all changes:
+Add a new section for your version with all changes. Use clear categories:
 
 ```markdown
-## 0.2.0
+## [0.2.0] - 2024-01-15
 
-- Added new feature X
-- Fixed bug Y
-- Breaking change: Z
+### Added
+- New feature X
+- Support for Y
+
+### Fixed
+- Bug where Z happened
+- Issue with A
+
+### Changed
+- Improved performance of B
+
+### Breaking Changes (for major versions only)
+- Renamed method `oldName()` to `newName()`
+- Removed deprecated class C
 ```
 
 ### 3. Commit and push changes
@@ -101,7 +130,18 @@ flutter pub publish
 ## Best Practices
 
 1. **Always test locally first**: Run `flutter test` and `flutter pub publish --dry-run`
-2. **Use semantic versioning**: MAJOR.MINOR.PATCH (e.g., 1.2.3)
+2. **Follow semantic versioning strictly**:
+   - Use MINOR versions (0.x.0) for new features, improvements, and fixes
+   - Reserve MAJOR versions (x.0.0) for breaking changes only
+   - Use PATCH versions (0.0.x) for critical bug fixes between releases
 3. **Keep CHANGELOG updated**: Users rely on this to understand changes
 4. **Tag consistently**: Always use `v` prefix (e.g., v0.2.0)
 5. **Don't publish from branches**: Always release from the main branch
+6. **Consider your users**: Breaking changes should be rare and well-documented
+
+## Version Examples
+
+- `0.1.0` → `0.2.0`: Added new `VapiClient.connect()` method
+- `0.2.0` → `0.3.0`: Fixed audio issues and improved performance
+- `0.3.0` → `1.0.0`: Breaking: Renamed `VapiClient` to `Vapi`
+- `1.0.0` → `1.0.1`: Fixed critical bug in connection handling
