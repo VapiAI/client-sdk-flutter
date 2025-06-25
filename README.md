@@ -1,6 +1,6 @@
 # Vapi Flutter SDK
 
-[![CI](https://github.com/VapiAI/vapi-client-sdk-flutter/actions/workflows/ci.yml/badge.svg)](https://github.com/VapiAI/vapi-client-sdk-flutter/actions/workflows/ci.yml)
+[![CI](https://github.com/VapiAI/client-sdk-flutter/actions/workflows/ci.yml/badge.svg)](https://github.com/VapiAI/client-sdk-flutter/actions/workflows/ci.yml)
 [![pub package](https://img.shields.io/pub/v/vapi.svg)](https://pub.dev/packages/vapi)
 
 ## Minimum requirements
