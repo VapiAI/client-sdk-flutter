@@ -27,7 +27,7 @@ class VapiError extends Error {
   }
 }
 
-/// Error thrown when the Vapi client cannot be created 
+/// Error thrown when the Vapi client cannot be created
 ///
 /// This is most likely due to platform specific issues
 class VapiClientCreationError extends VapiError {

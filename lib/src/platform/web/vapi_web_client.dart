@@ -13,10 +13,10 @@ import 'vapi_web_call.dart';
 import 'vapi_js_interop.dart';
 
 /// Web-specific implementation of the Vapi client.
-/// 
+///
 /// This implementation uses the Vapi Web SDK (@vapi-ai/web) through JavaScript interop
 /// for browser-based real-time communication.
-/// 
+///
 /// Features:
 /// - Browser-native WebRTC through Vapi Web SDK
 /// - Automatic browser permission handling
@@ -44,16 +44,17 @@ class VapiWebClient implements VapiClientInterface {
   /// Called by Flutter's web plugin registrant at startup.
   static void registerWith(Registrar registrar) {
     if (!_scriptInjected) {
-      final cdnUrlJs = '$_cdnUrl'.toJS;
+      final cdnUrlJs = _cdnUrl.toJS;
       final modulePromise = importModule(cdnUrlJs).toDart;
-      
+
       modulePromise.then((module) {
         final esModule = module.getProperty('default'.toJS);
         final moduleName = 'VapiEsModule'.toJS;
         globalContext.setProperty(moduleName, esModule);
         _scriptLoadedCompleter.complete();
       }).catchError((e) {
-        final error = VapiClientCreationError('Failed to load Vapi Web SDK: $e');
+        final error =
+            VapiClientCreationError('Failed to load Vapi Web SDK: $e');
         _scriptLoadedCompleter.completeError(error);
       });
 
@@ -62,7 +63,7 @@ class VapiWebClient implements VapiClientInterface {
   }
 
   /// Creates a new web Vapi client.
-  /// 
+  ///
   /// [publicKey] is required for API authentication.
   /// [apiBaseUrl] is not used in web implementation as the Vapi Web SDK
   /// handles API communication internally.
@@ -75,7 +76,8 @@ class VapiWebClient implements VapiClientInterface {
     }
 
     if (!_scriptInjected || !_scriptLoadedCompleter.isCompleted) {
-      throw VapiClientCreationError('Vapi Web SDK script not loaded - injection status: $_scriptInjected, completion status: ${_scriptLoadedCompleter.isCompleted}');
+      throw VapiClientCreationError(
+          'Vapi Web SDK script not loaded - injection status: $_scriptInjected, completion status: ${_scriptLoadedCompleter.isCompleted}');
     }
 
     try {
@@ -94,10 +96,9 @@ class VapiWebClient implements VapiClientInterface {
     bool waitUntilActive = false,
   }) async {
     final assistantConfig = AssistantConfig(
-      assistantId: assistantId, 
-      assistant: assistant, 
-      assistantOverrides: assistantOverrides
-    );
+        assistantId: assistantId,
+        assistant: assistant,
+        assistantOverrides: assistantOverrides);
 
     try {
       return VapiWebCall.create(
@@ -121,11 +122,11 @@ class VapiWebClient implements VapiClientInterface {
       // Nothing we can do here
     }
   }
-} 
+}
 
-/// Common interface for retrieving the implementation 
+/// Common interface for retrieving the implementation
 /// so conditional imports can be used.
-/// 
+///
 /// [publicKey] is required for API authentication.
 /// [apiBaseUrl] defaults to the production Vapi API.
 getImplementation({

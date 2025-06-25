@@ -7,13 +7,13 @@ import '../../vapi_client_interface.dart';
 import '../../vapi_call_interface.dart';
 import '../../shared/exceptions.dart';
 import '../../shared/assistant_config.dart';
-import 'vapi_mobile_call.dart'; 
+import 'vapi_mobile_call.dart';
 
 /// Mobile-specific implementation of the Vapi client.
-/// 
+///
 /// This implementation uses the Daily.co WebRTC SDK for real-time communication
 /// and handles mobile-specific concerns like permissions and audio device management.
-/// 
+///
 /// Features:
 /// - Automatic microphone permission handling
 /// - WebRTC-based real-time communication
@@ -27,7 +27,7 @@ class VapiMobileClient implements VapiClientInterface {
   final String apiBaseUrl;
 
   /// Creates a new mobile Vapi client.
-  /// 
+  ///
   /// [publicKey] is required for API authentication.
   /// [apiBaseUrl] defaults to the production Vapi API.
   VapiMobileClient({
@@ -59,20 +59,17 @@ class VapiMobileClient implements VapiClientInterface {
       assistantOverrides: assistantOverrides,
     );
 
-    final client = await _createClientWithRetries(clientCreationTimeoutDuration);
+    final client =
+        await _createClientWithRetries(clientCreationTimeoutDuration);
 
     try {
-      return await VapiMobileCall.create(
-        client, 
-        apiResponse, 
-        waitUntilActive: waitUntilActive
-      );
+      return await VapiMobileCall.create(client, apiResponse,
+          waitUntilActive: waitUntilActive);
     } catch (e) {
       client.dispose();
       rethrow;
     }
   }
-
 
   @override
   void dispose() {
@@ -81,16 +78,16 @@ class VapiMobileClient implements VapiClientInterface {
   }
 
   /// Requests microphone permission from the user.
-  /// 
+  ///
   /// On mobile platforms, microphone access requires explicit user permission.
   /// This method handles the permission request flow and guides users to
   /// app settings if permission is permanently denied.
   Future<void> _requestMicrophonePermission() async {
     var microphoneStatus = await Permission.microphone.request();
-    
+
     if (microphoneStatus.isDenied) {
       microphoneStatus = await Permission.microphone.request();
-      
+
       if (microphoneStatus.isPermanentlyDenied) {
         await openAppSettings();
         return;
@@ -99,7 +96,7 @@ class VapiMobileClient implements VapiClientInterface {
   }
 
   /// Creates a call on Vapi servers and returns the full API response.
-  /// 
+  ///
   /// This method handles the HTTP request to create a new call session
   /// and validates the response before returning.
   Future<Map<String, dynamic>> _createVapiCall({
@@ -114,14 +111,13 @@ class VapiMobileClient implements VapiClientInterface {
     };
 
     final assistantConfig = AssistantConfig(
-      assistantId: assistantId, 
-      assistant: assistant, 
-      assistantOverrides: assistantOverrides
-    );
+        assistantId: assistantId,
+        assistant: assistant,
+        assistantOverrides: assistantOverrides);
 
     final response = await http.post(
-      url, 
-      headers: headers, 
+      url,
+      headers: headers,
       body: jsonEncode(assistantConfig.createRequestBody()),
     );
 
@@ -138,7 +134,7 @@ class VapiMobileClient implements VapiClientInterface {
   }
 
   /// Creates a Daily CallClient with retry logic.
-  /// 
+  ///
   /// Network conditions and device states can cause client creation to fail.
   /// This method implements exponential backoff retry logic to handle
   /// transient failures gracefully.
@@ -149,7 +145,8 @@ class VapiMobileClient implements VapiClientInterface {
 
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        final client = await _createClientWithTimeout(clientCreationTimeoutDuration);
+        final client =
+            await _createClientWithTimeout(clientCreationTimeoutDuration);
         return client;
       } catch (error) {
         if (attempt >= maxRetries) {
@@ -163,7 +160,7 @@ class VapiMobileClient implements VapiClientInterface {
   }
 
   /// Creates a CallClient with a timeout.
-  /// 
+  ///
   /// Client creation can hang in poor network conditions.
   /// This method ensures creation fails fast if it takes too long.
   Future<CallClient> _createClientWithTimeout(Duration timeout) async {
@@ -181,11 +178,11 @@ class VapiMobileClient implements VapiClientInterface {
       throw VapiStartCallException(error);
     }
   }
-} 
+}
 
-/// Common interface for retrieving the implementation 
+/// Common interface for retrieving the implementation
 /// so conditional imports can be used.
-/// 
+///
 /// [publicKey] is required for API authentication.
 /// [apiBaseUrl] defaults to the production Vapi API.
 getImplementation({

@@ -18,10 +18,10 @@ class _MyAppState extends State<MyApp> {
   String buttonText = 'Start Call';
   bool isLoading = false;
   bool isCallStarted = false;
-  
+
   VapiClient? vapiClient;
   VapiCall? currentCall;
-  
+
   // Controllers for text fields
   final TextEditingController _publicKeyController = TextEditingController();
   final TextEditingController _assistantIdController = TextEditingController();
@@ -67,8 +67,9 @@ class _MyAppState extends State<MyApp> {
 
       if (!isCallStarted) {
         // Start a new call using assistant ID
-        final call = await vapiClient!.start(assistantId: _assistantIdController.text.trim());
-        
+        final call = await vapiClient!
+            .start(assistantId: _assistantIdController.text.trim());
+
         currentCall = call;
         call.onEvent.listen(_handleCallEvents);
       } else {
@@ -81,7 +82,7 @@ class _MyAppState extends State<MyApp> {
         buttonText = 'Start Call';
         isLoading = false;
       });
-      
+
       // Show error dialog
       if (mounted) {
         showDialog(
