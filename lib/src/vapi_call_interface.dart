@@ -19,7 +19,8 @@ abstract interface class VapiCall {
   String get id;
 
   /// ID of the assistant handling this call.
-  String get assistantId;
+  /// May be null when using inline assistant configuration.
+  String? get assistantId;
 
   /// Assistant configuration overrides for this call.
   Map<String, dynamic> get assistantOverrides;
