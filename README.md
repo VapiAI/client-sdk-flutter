@@ -9,6 +9,9 @@
 
 This package relies heavily on the [`daily_flutter`](https://pub.dev/packages/daily_flutter) package. Please refer to the [daily_flutter pub.dev page](https://pub.dev/packages/daily_flutter) for the most up-to-date version constraints and platform requirements.
 
+**iOS:** Requires iOS 13.0 or higher due to the `daily_flutter` dependency.
+**Android:** Requires SDK version 24 or higher due to the `daily_flutter` dependency.
+
 ### Web
 
 - No special requirements. The Vapi Web SDK is loaded under the hood via [jsdelivr](https://www.jsdelivr.com/), and a specific version is hardcoded to ensure compatibility with this Flutter package. For more details, see `lib/src/platform/web/vapi_web_client.dart`.
@@ -36,6 +39,12 @@ void main() async {
 Then, follow the platform-specific setup instructions for `permission_handler`:
 
 ### iOS
+
+**Important:** This package requires iOS 13.0 or higher due to the `daily_flutter` dependency. Make sure to set the iOS deployment target in your Podfile:
+
+```ruby
+platform :ios, '13.0'
+```
 
 According to the permission_handler instructions above, add the permission flags for microphone.
 
@@ -76,6 +85,16 @@ Add the necessary permissions to your AndroidManifest.xml:
 ```
 
 Add the permission flags for microphone according to the permission_handler instructions above.
+
+**Important:** This package requires Android SDK version 24 or higher due to the `daily_flutter` dependency. Make sure to set the minimum SDK version in your build.gradle.kts:
+
+```kotlin
+android {
+    defaultConfig {
+        minSdk = 24
+    }
+}
+```
 
 ---
 

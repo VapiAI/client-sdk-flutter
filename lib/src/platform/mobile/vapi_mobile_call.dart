@@ -119,8 +119,9 @@ class VapiMobileCall implements VapiCall {
   final String webCallUrl;
 
   /// ID of the assistant handling this call
+  /// May be null when using inline assistant configuration
   @override
-  final String assistantId;
+  final String? assistantId;
 
   /// Assistant configuration overrides for this call
   @override
@@ -165,7 +166,7 @@ class VapiMobileCall implements VapiCall {
     final transport = VapiCallTransport.fromJson(
         apiResponse['transport'] as Map<String, dynamic>);
     final webCallUrl = apiResponse['webCallUrl'] as String;
-    final assistantId = apiResponse['assistantId'] as String;
+    final assistantId = apiResponse['assistantId'] as String?;
     final assistantOverrides = Map<String, dynamic>.from(
         apiResponse['assistantOverrides'] as Map<String, dynamic>);
 
