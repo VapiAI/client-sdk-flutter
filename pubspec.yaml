@@ -1,6 +1,6 @@
 name: vapi
 description: "The Vapi Flutter Client SDK with unified mobile and web support."
-version: 0.1.0
+version: 0.1.1
 homepage: https://vapi.ai/
 
 environment:
@@ -12,17 +12,17 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
-  
+
   # general dependencies
   http: ^1.2.0
 
-  
+
   # Mobile-specific dependencies
   daily_flutter: ^0.31.0
   # Note: permission_handler is constrained by daily_flutter 0.31.0
   # which requires ^11.3.1. Update when daily_flutter supports ^12.0.0
   permission_handler: ^11.3.1
-  
+
   # Web-specific dependencies
   web: ^1.1.0
 
