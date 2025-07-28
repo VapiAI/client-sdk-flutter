@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-01-27
+
+### Fixed
+
+- Fixed null cast issue when using inline assistant configuration
+- Made `assistantId` nullable in interface and implementations
+
+### Platform Support
+
+- Updated iOS deployment target requirement to 13.0+ in README
+- Updated Android minimum SDK requirement to 24 in README
+
 ## [0.1.0] - 2024-02-12
 
 ### Added
