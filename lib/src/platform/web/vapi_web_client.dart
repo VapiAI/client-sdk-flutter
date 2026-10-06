@@ -101,7 +101,7 @@ class VapiWebClient implements VapiClientInterface {
         assistantOverrides: assistantOverrides);
 
     try {
-      return VapiWebCall.create(
+      return await VapiWebCall.create(
         _vapiJs,
         assistantConfig,
         waitUntilActive: waitUntilActive,
